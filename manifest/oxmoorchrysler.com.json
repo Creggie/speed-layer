@@ -1,0 +1,43 @@
+{
+  "version": "2025-10-24",
+
+  "preconnect": [
+    "https://cdn.dealerinspire.com",
+    "https://www.googletagmanager.com"
+  ],
+
+  "preload": [
+    /* optional: add a key font/hero asset here if you know it */
+    /* { "as": "font", "href": "https://cdn.dealerinspire.com/.../inter-var.woff2", "crossorigin": true } */
+  ],
+
+  "allowScripts": [
+    /* platform-critical JS that must run immediately */
+    "cdn\\.dealerinspire\\.com/.*/di[-]?theme.*\\.js",
+    "cdn\\.dealerinspire\\.com/.*/glovebox.*\\.js",
+    "/wp-content/.*\\.js"
+  ],
+
+  "deferScripts": [
+    /* analytics/ads → delay to idle/first interaction */
+    "^https://www\\.googletagmanager\\.com/gtm\\.js",
+    "google-analytics\\.com",
+    "googletagservices\\.com",
+    "connect\\.facebook\\.net",
+    "bat\\.bing\\.com",
+    "snap\\.licdn\\.com",
+    "static\\.hotjar\\.com",
+    "js\\.hs-scripts\\.com",
+    "analytics\\.tiktok\\.com",
+    "static\\.ads-twitter\\.com",
+    "www\\.clarity\\.ms",
+    "cdn\\.callrail\\.com"
+  ],
+
+  "vendorScripts": [
+    /* optional: force-load a specific SDK after interaction */
+    /* "https://www.googletagmanager.com/gtm.js?id=GTM-XXXXXXX" */
+  ],
+
+  "criticalCssInline": ""
+}
