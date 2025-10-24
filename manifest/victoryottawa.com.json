@@ -1,35 +1,45 @@
 {
+  "version": "1.0",
   "allowScripts": [
-    "https://www\\.victoryottawa\\.com/.*/(common|init|min)\\.js",
-    "https://www\\.victoryottawa\\.com/.*/(wp-polyfill|min\\.js)$",
-    "https://www\\.victoryottawa\\.com/.*/di_shift_digital\\.js"
-    "https://cdn\\.complyauto\\.com/.*",
-
+    "^https://www\\.victoryottawa\\.com/.*\\.js(?:\\?.*)?$"
   ],
   "deferScripts": [
-    "https://www\\.datadoghq-browser-agent\\.com/.*",
-    "https://wsv3cdn\\.audioeye\\.com/.*",
-    "https://wsmcdn\\.audioeye\\.com/.*",
-    "https://cdn\\.autoleadstar\\.com/.*",
-    "https://dai\\.autoleadstar\\.com/.*",
-    "https://ignitify-.*\\.drivecentric\\.io/.*",
-    "https://api\\.drivecentric\\.com/.*",
-    "https://vehicle-sprites\\.dealerinspire\\.com/.*",
-    "https://di-uploads-.*\\.dealerinspire\\.com/.*"
+    "^https://www\\.datadoghq-browser-agent\\.com/.*",
+    "^https://cdn\\.complyauto\\.com/.*",
+    "^https://wsv3cdn\\.audioeye\\.com/.*",
+    "^https://wsmcdn\\.audioeye\\.com/.*",
+    "^https://cdn\\.autoleadstar\\.com/.*",
+    "^https://dai\\.autoleadstar\\.com/.*",
+    "^https://ignitify-[a-z-]+\\.drivecentric\\.io/.*",
+    "^https://api\\.drivecentric\\.com/.*",
+    "^https://vehicle-sprites\\.dealerinspire\\.com/.*",
+    "^https://di-uploads-[a-z0-9-]+\\.dealerinspire\\.com/.*",
+    "^https://dealerinspire-shared-assets\\.s3\\.amazonaws\\.com/.*",
+    "^https://dzpcfnzjaq7lj\\.cloudfront\\.net/.*",
+    "^https://d1omuuphk28ngj\\.cloudfront\\.net/.*",
+    "^https://cdn\\.iviewanalytics\\.com/.*",
+    "^https://fcaupstart\\.searchoptics\\.net/.*",
+    "^https://sdtagging\\.azureedge\\.net/.*",
+    "^https://tagging\\.shiftdigitalapps\\.io/.*",
+    "^https://www\\.google-analytics\\.com/analytics\\.js(?:\\?.*)?$"
   ],
   "preconnect": [
     "https://www.victoryottawa.com",
-    "https://fonts.gstatic.com",
     "https://fonts.googleapis.com",
-    "https://cdn.jsdelivr.net"
+    "https://fonts.gstatic.com",
+    "https://di-uploads-pod42.dealerinspire.com",
+    "https://vehicle-sprites.dealerinspire.com"
   ],
   "preload": [
-    { "href": "https://your-cdn.example.com/images/hero.avif", "as": "image", "crossorigin": true },
-    { "href": "https://fonts.gstatic.com/s/yourfont.woff2", "as": "font", "crossorigin": true }
   ],
-  "criticalCssInline": "/* tiny above-the-fold CSS only */",
+  "criticalCssInline": "/* keep this tiny: above-the-fold header/nav layout only */",
   "vendorScripts": [
-    "https://wsv3cdn.audioeye.com/.../active.js",
-    "https://www.datadoghq-browser-agent.com/.../datadog-rum.js"
+    "https://www.datadoghq-browser-agent.com/v5/datadog-rum.js",
+    "https://wsv3cdn.audioeye.com/.../active.js"
+  ],
+  "eagerSelectors": [
+    "img[data-lcp='true']",
+    ".homepage-hero img",
+    "img#lcp-hero"
   ]
 }
