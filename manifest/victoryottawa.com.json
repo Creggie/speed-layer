@@ -1,24 +1,35 @@
 {
-  "version": "2025-10-24",
-
   "allowScripts": [
-  "cdn\\.dealerinspire\\.com/.*/di[-]?theme.*\\.js",
-  "/wp-content/.*\\.js",
-  "google-analytics\\.com",
-  "^https://www\\.googletagmanager\\.com/gtm\\.js\\?(?:[^#]*&)?id=GTM-NFTX3XB(?:&|$)",
-]
+    "https://www\\.victoryottawa\\.com/.*/(common|init|min)\\.js",
+    "https://www\\.victoryottawa\\.com/.*/(wp-polyfill|min\\.js)$",
+    "https://www\\.victoryottawa\\.com/.*/di_shift_digital\\.js"
+    "https://cdn\\.complyauto\\.com/.*",
 
-
+  ],
   "deferScripts": [
-    "www\\.googletagmanager\\.com",
-    "googletagservices\\.com",
-    "connect\\.facebook\\.net",
-    "bat\\.bing\\.com",
-    "snap\\.licdn\\.com",
-    "static\\.hotjar\\.com",
-    "js\\.hs-scripts\\.com",
-    "analytics\\.tiktok\\.com",
-    "static\\.ads-twitter\\.com"
-    "https://dai.autoleadstar.com/chunk-ZCQVU3AB.js"
+    "https://www\\.datadoghq-browser-agent\\.com/.*",
+    "https://wsv3cdn\\.audioeye\\.com/.*",
+    "https://wsmcdn\\.audioeye\\.com/.*",
+    "https://cdn\\.autoleadstar\\.com/.*",
+    "https://dai\\.autoleadstar\\.com/.*",
+    "https://ignitify-.*\\.drivecentric\\.io/.*",
+    "https://api\\.drivecentric\\.com/.*",
+    "https://vehicle-sprites\\.dealerinspire\\.com/.*",
+    "https://di-uploads-.*\\.dealerinspire\\.com/.*"
+  ],
+  "preconnect": [
+    "https://www.victoryottawa.com",
+    "https://fonts.gstatic.com",
+    "https://fonts.googleapis.com",
+    "https://cdn.jsdelivr.net"
+  ],
+  "preload": [
+    { "href": "https://your-cdn.example.com/images/hero.avif", "as": "image", "crossorigin": true },
+    { "href": "https://fonts.gstatic.com/s/yourfont.woff2", "as": "font", "crossorigin": true }
+  ],
+  "criticalCssInline": "/* tiny above-the-fold CSS only */",
+  "vendorScripts": [
+    "https://wsv3cdn.audioeye.com/.../active.js",
+    "https://www.datadoghq-browser-agent.com/.../datadog-rum.js"
   ]
 }
