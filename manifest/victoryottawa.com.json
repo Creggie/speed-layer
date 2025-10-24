@@ -1,0 +1,24 @@
+{
+  "version": "2025-10-24",
+
+  "allowScripts": [
+  "cdn\\.dealerinspire\\.com/.*/di[-]?theme.*\\.js",
+  "/wp-content/.*\\.js",
+  "google-analytics\\.com",
+  "^https://www\\.googletagmanager\\.com/gtm\\.js\\?(?:[^#]*&)?id=GTM-NFTX3XB(?:&|$)",
+]
+
+
+  "deferScripts": [
+    "www\\.googletagmanager\\.com",
+    "googletagservices\\.com",
+    "connect\\.facebook\\.net",
+    "bat\\.bing\\.com",
+    "snap\\.licdn\\.com",
+    "static\\.hotjar\\.com",
+    "js\\.hs-scripts\\.com",
+    "analytics\\.tiktok\\.com",
+    "static\\.ads-twitter\\.com"
+    "https://dai.autoleadstar.com/chunk-ZCQVU3AB.js"
+  ]
+}
