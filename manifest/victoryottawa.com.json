@@ -1,45 +1,52 @@
 {
-  "version": "1.0",
+  "domain": "victoryottawa.com",
+  "version": "1.0.0",
+  "debug": false,
   "allowScripts": [
-    "^https://www\\.victoryottawa\\.com/.*\\.js(?:\\?.*)?$"
+    "dealerinspire.com",
+    "di-assets.com",
+    "jquery",
+    "bootstrap",
+    "core.js",
+    "main.js",
+    "vendor.js"
   ],
   "deferScripts": [
-    "^https://www\\.datadoghq-browser-agent\\.com/.*",
-    "^https://cdn\\.complyauto\\.com/.*",
-    "^https://wsv3cdn\\.audioeye\\.com/.*",
-    "^https://wsmcdn\\.audioeye\\.com/.*",
-    "^https://cdn\\.autoleadstar\\.com/.*",
-    "^https://dai\\.autoleadstar\\.com/.*",
-    "^https://ignitify-[a-z-]+\\.drivecentric\\.io/.*",
-    "^https://api\\.drivecentric\\.com/.*",
-    "^https://vehicle-sprites\\.dealerinspire\\.com/.*",
-    "^https://di-uploads-[a-z0-9-]+\\.dealerinspire\\.com/.*",
-    "^https://dealerinspire-shared-assets\\.s3\\.amazonaws\\.com/.*",
-    "^https://dzpcfnzjaq7lj\\.cloudfront\\.net/.*",
-    "^https://d1omuuphk28ngj\\.cloudfront\\.net/.*",
-    "^https://cdn\\.iviewanalytics\\.com/.*",
-    "^https://fcaupstart\\.searchoptics\\.net/.*",
-    "^https://sdtagging\\.azureedge\\.net/.*",
-    "^https://tagging\\.shiftdigitalapps\\.io/.*",
-    "^https://www\\.google-analytics\\.com/analytics\\.js(?:\\?.*)?$"
+    "google-analytics.com",
+    "googletagmanager.com",
+    "gtag",
+    "analytics.js",
+    "ga.js",
+    "facebook.net",
+    "fbevents.js",
+    "doubleclick.net",
+    "adservice",
+    "tracking",
+    "hotjar",
+    "mouseflow",
+    "crazyegg",
+    "quantcast",
+    "bing.com/clarity"
   ],
   "preconnect": [
-    "https://www.victoryottawa.com",
     "https://fonts.googleapis.com",
     "https://fonts.gstatic.com",
-    "https://di-uploads-pod42.dealerinspire.com",
-    "https://vehicle-sprites.dealerinspire.com"
+    "https://www.google-analytics.com",
+    "https://www.googletagmanager.com"
   ],
   "preload": [
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap",
+      "as": "style",
+      "crossorigin": "anonymous"
+    }
   ],
-  "criticalCssInline": "/* keep this tiny: above-the-fold header/nav layout only */",
-  "vendorScripts": [
-    "https://www.datadoghq-browser-agent.com/v5/datadog-rum.js",
-    "https://wsv3cdn.audioeye.com/.../active.js"
-  ],
-  "eagerSelectors": [
-    "img[data-lcp='true']",
-    ".homepage-hero img",
-    "img#lcp-hero"
-  ]
+  "criticalCssInline": "body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif}header{background:#000;color:#fff;padding:1rem}.hero{min-height:400px;background:#f5f5f5}",
+  "notes": {
+    "allowScripts": "Platform-critical scripts that must execute immediately for site functionality",
+    "deferScripts": "Analytics, tracking, and ad scripts that can wait for user interaction",
+    "preconnect": "Domains to establish early connections to",
+    "preload": "Critical resources to fetch early",
+    "criticalCssInline": "Above-the-fold CSS to eliminate render-blocking requests"
+  }
 }
