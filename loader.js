@@ -1,182 +1,471 @@
-/* Speed Layer Loader v1.1 — synchronous header script
-   Embed like this:
-   <script src="https://cdn.jsdelivr.net/gh/Creggie/speed-layer@latest/loader.js"
-           data-manifest="https://cdn.jsdelivr.net/gh/Creggie/speed-layer@latest/manifest/"></script>
-*/
+/**
+ * Speed Layer Loader
+ * Self-contained performance optimization script that intercepts and manages resource loading
+ * Version: 1.0.0
+ */
+
 (function () {
-  "use strict";
-  if (window.__SPEED_LAYER__) return; // prevent duplicate load
-  window.__SPEED_LAYER__ = { version: "1.1" };
+  'use strict';
 
-  // --- Config ---
-  var scriptEl = document.currentScript || (function(){
-    var s = document.getElementsByTagName("script");
-    return s[s.length - 1];
-  })();
-  var MANIFEST_BASE = (scriptEl && scriptEl.getAttribute("data-manifest")) || "";
-  var host = location.hostname.toLowerCase();
-  var manifestURL = (MANIFEST_BASE.replace(/\/?$/, "/")) + encodeURIComponent(host) + ".json";
+  // =============================================================================
+  // CONFIGURATION & STATE
+  // =============================================================================
 
-  var cfg = null, allow = [], deferList = [], booted = false;
-  var eagerSel = []; // selectors for eager images
-
-  // --- Utils ---
-  function idle(fn) { 
-    if ("requestIdleCallback" in window) requestIdleCallback(fn, { timeout: 1500 }); 
-    else setTimeout(fn, 120);
-  }
-  function add(tag, attrs) {
-    var el = document.createElement(tag);
-    for (var k in (attrs || {})) if (attrs.hasOwnProperty(k)) el.setAttribute(k, attrs[k]);
-    (document.head || document.documentElement).appendChild(el);
-    return el;
-  }
-  function toRegexList(arr) { 
-    return (arr || []).map(function (p) { 
-      try { return new RegExp(p); } catch(e){ return /$a/; } 
-    }); 
-  }
-  function testAny(list, url) {
-    for (var i = 0; i < list.length; i++) if (list[i].test(url)) return true;
-    return false;
-  }
-  function isEager(el) {
-    try { return eagerSel.some(function (sel) { return el.matches && el.matches(sel); }); }
-    catch (e) { return false; }
-  }
-
-  // --- Analytics stubs ---
-  window.dataLayer = window.dataLayer || [];
-  if (!window.fbq) {
-    var fbq = function () { (fbq.q = fbq.q || []).push(arguments); };
-    fbq.loaded = false; window.fbq = fbq;
-  }
-
-  // --- Element governance ---
-  var _create = document.createElement;
-  document.createElement = function (tag) {
-    var el = _create.call(document, tag);
-    try {
-      if (tag === "img") {
-        if (isEager(el)) {
-          el.loading = "eager";
-          el.setAttribute("fetchpriority", "high");
-        } else {
-          if (!el.loading) el.loading = "lazy";
-        }
-        if (!el.decoding) el.decoding = "async";
-      }
-      if (tag === "iframe") {
-        if (!el.loading) el.loading = "lazy";
-        el.setAttribute("fetchpriority", "low");
-      }
-      if (tag === "script") hookScript(el);
-    } catch (e) {}
-    return el;
+  const STATE = {
+    manifest: null,
+    manifestLoaded: false,
+    userInteracted: false,
+    idleCallbackFired: false,
+    observerActive: false,
+    processedElements: new WeakSet(),
+    queuedScripts: [],
+    queuedMedia: []
   };
 
-  function hookScript(node) {
-    var _setAttr = node.setAttribute;
-    node.setAttribute = function (name, value) {
-      if (name === "src") { govern(node, value); return; }
-      return _setAttr.apply(node, arguments);
-    };
-    Object.defineProperty(node, "src", {
-      configurable: true,
-      get: function () { return node.getAttribute("src"); },
-      set: function (v) { govern(node, v); }
-    });
-  }
+  const CONFIG = {
+    manifestUrl: null,
+    domain: window.location.hostname,
+    scriptTag: document.currentScript,
+    interactionEvents: ['mousedown', 'keydown', 'touchstart', 'pointerdown'],
+    idleTimeout: 4000 // Fallback if requestIdleCallback not supported
+  };
 
-  function allowNow(url) { return testAny(allow, url); }
-  function shouldDefer(url) {
-    if (!cfg) return false; // fail-safe: allow everything if no manifest
-    return deferList.length ? testAny(deferList, url) : !allowNow(url);
-  }
+  // Global namespace for debugging and external access
+  window.__SPEED_LAYER__ = {
+    version: '1.0.0',
+    state: STATE,
+    config: CONFIG,
+    forceLoadAll: forceLoadAll
+  };
 
-  function loadAsync(url, fromNode) {
-    var s = document.createElement("script");
-    s.async = true;
-    if (fromNode && fromNode.type) s.type = fromNode.type; // preserve module if present
-    s.src = url;
-    (document.head || document.documentElement).appendChild(s);
-  }
+  // =============================================================================
+  // UTILITY FUNCTIONS
+  // =============================================================================
 
-  function govern(node, url) {
-    try {
-      if (allowNow(url)) { node.setAttribute("src", url); return; }
-      var runner = function () { loadAsync(url, node); };
-      shouldDefer(url) ? idle(runner) : runner();
-    } catch (e) {
-      node.setAttribute("src", url);
+  /**
+   * Simple logging utility that respects debug mode
+   */
+  function log(message, data) {
+    if (STATE.manifest && STATE.manifest.debug) {
+      console.log('[SpeedLayer]', message, data || '');
     }
   }
 
-  // --- Mutation observer for dynamically inserted elements ---
-  new MutationObserver(function (muts) {
-    muts.forEach(function (m) {
-      (m.addedNodes || []).forEach(function (n) {
-        if (!n.tagName) return;
-        var t = n.tagName.toUpperCase();
-        if (t === "IMG") {
-          if (isEager(n)) {
-            n.loading = "eager";
-            n.setAttribute("fetchpriority", "high");
-          } else if (!n.loading) {
-            n.loading = "lazy";
-          }
-          if (!n.decoding) n.decoding = "async";
-        }
-        if (t === "IFRAME") {
-          if (!n.loading) n.loading = "lazy";
-          n.setAttribute("fetchpriority", "low");
-        }
-        if (t === "SCRIPT") hookScript(n);
-      });
-    });
-  }).observe(document.documentElement, { childList: true, subtree: true });
+  /**
+   * Check if a script URL matches any pattern in the list
+   */
+  function matchesPattern(url, patterns) {
+    if (!url || !patterns || !patterns.length) return false;
 
-  // --- First-interaction boot: only vendorScripts now ---
-  function boot() {
-    if (booted || !cfg) return; booted = true;
-    try {
-      (cfg.vendorScripts || []).forEach(function (u) { idle(function () { loadAsync(u); }); });
-    } catch (e) {}
+    return patterns.some(pattern => {
+      // Exact match
+      if (url.includes(pattern)) return true;
+
+      // Regex pattern (if pattern starts and ends with /)
+      if (pattern.startsWith('/') && pattern.endsWith('/')) {
+        try {
+          const regex = new RegExp(pattern.slice(1, -1));
+          return regex.test(url);
+        } catch (e) {
+          return false;
+        }
+      }
+
+      return false;
+    });
   }
 
-  addEventListener("pointerdown", boot, { once: true });
-  addEventListener("scroll", boot, { once: true, passive: true });
-  addEventListener("load", function () { setTimeout(boot, 500); });
+  /**
+   * Determine if a script should be allowed to execute immediately
+   */
+  function shouldAllowScript(src) {
+    if (!STATE.manifest || !src) return false;
 
-  // --- Manifest fetch ---
-  try {
-    var x = new XMLHttpRequest();
-    x.open("GET", manifestURL, true);
-    x.onreadystatechange = function () {
-      if (x.readyState === 4 && x.status >= 200 && x.status < 300) {
-        try {
-          cfg = JSON.parse(x.responseText || "{}");
-          allow = toRegexList(cfg.allowScripts || []);
-          deferList = toRegexList(cfg.deferScripts || []);
-          eagerSel = (cfg && cfg.eagerSelectors) || [];
+    const allowList = STATE.manifest.allowScripts || [];
+    return matchesPattern(src, allowList);
+  }
 
-          // --- Run early hints immediately (not waiting for interaction) ---
-          (cfg.preconnect || []).forEach(function (h) {
-            add("link", { rel: "preconnect", href: h, crossorigin: "anonymous" });
-          });
-          (cfg.preload || []).forEach(function (o) {
-            var attrs = { rel: "preload", as: o.as || "", href: o.href || "" };
-            if (o.crossorigin) attrs.crossorigin = "anonymous";
-            add("link", attrs);
-          });
-          if (cfg.criticalCssInline) {
-            var st = document.createElement("style");
-            st.textContent = cfg.criticalCssInline;
-            (document.head || document.documentElement).appendChild(st);
+  /**
+   * Determine if a script should be deferred
+   */
+  function shouldDeferScript(src) {
+    if (!STATE.manifest || !src) return true; // Default to defer
+
+    const deferList = STATE.manifest.deferScripts || [];
+    return matchesPattern(src, deferList);
+  }
+
+  // =============================================================================
+  // MANIFEST LOADING
+  // =============================================================================
+
+  /**
+   * Load and parse the manifest configuration for the current domain
+   */
+  function loadManifest() {
+    const manifestAttr = CONFIG.scriptTag.getAttribute('data-manifest');
+
+    if (!manifestAttr) {
+      console.error('[SpeedLayer] No data-manifest attribute found');
+      return Promise.resolve(null);
+    }
+
+    // Construct manifest URL: base URL + domain.json
+    CONFIG.manifestUrl = manifestAttr.endsWith('/')
+      ? `${manifestAttr}${CONFIG.domain}.json`
+      : `${manifestAttr}/${CONFIG.domain}.json`;
+
+    log('Loading manifest from:', CONFIG.manifestUrl);
+
+    return fetch(CONFIG.manifestUrl)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(manifest => {
+        STATE.manifest = manifest;
+        STATE.manifestLoaded = true;
+        log('Manifest loaded successfully', manifest);
+        return manifest;
+      })
+      .catch(error => {
+        console.warn('[SpeedLayer] Failed to load manifest:', error.message);
+        // Use safe defaults if manifest fails to load
+        STATE.manifest = {
+          allowScripts: [],
+          deferScripts: ['analytics', 'tracking', 'gtag', 'facebook', 'doubleclick'],
+          preconnect: [],
+          preload: [],
+          debug: false
+        };
+        STATE.manifestLoaded = true;
+        return STATE.manifest;
+      });
+  }
+
+  // =============================================================================
+  // RESOURCE OPTIMIZATION
+  // =============================================================================
+
+  /**
+   * Apply preconnect hints from manifest
+   */
+  function applyPreconnects() {
+    if (!STATE.manifest || !STATE.manifest.preconnect) return;
+
+    STATE.manifest.preconnect.forEach(url => {
+      const link = document.createElement('link');
+      link.rel = 'preconnect';
+      link.href = url;
+      link.crossOrigin = 'anonymous';
+      document.head.appendChild(link);
+      log('Applied preconnect:', url);
+    });
+  }
+
+  /**
+   * Apply preload hints from manifest
+   */
+  function applyPreloads() {
+    if (!STATE.manifest || !STATE.manifest.preload) return;
+
+    STATE.manifest.preload.forEach(item => {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.href = item.url;
+      link.as = item.as || 'script';
+      if (item.crossorigin) link.crossOrigin = item.crossorigin;
+      document.head.appendChild(link);
+      log('Applied preload:', item.url);
+    });
+  }
+
+  /**
+   * Inject critical CSS if provided in manifest
+   */
+  function injectCriticalCSS() {
+    if (!STATE.manifest || !STATE.manifest.criticalCssInline) return;
+
+    const style = document.createElement('style');
+    style.textContent = STATE.manifest.criticalCssInline;
+    document.head.appendChild(style);
+    log('Injected critical CSS');
+  }
+
+  // =============================================================================
+  // SCRIPT INTERCEPTION
+  // =============================================================================
+
+  /**
+   * Intercept script creation and apply deferral logic
+   */
+  function interceptScripts() {
+    const originalCreateElement = document.createElement;
+
+    document.createElement = function (tagName) {
+      const element = originalCreateElement.call(document, tagName);
+
+      if (tagName.toLowerCase() === 'script') {
+        // Track this script element
+        const scriptProxy = new Proxy(element, {
+          set(target, property, value) {
+            // Intercept src assignment
+            if (property === 'src' && value) {
+              log('Script src detected:', value);
+
+              // Check if this script should be allowed immediately
+              if (shouldAllowScript(value)) {
+                log('Allowing script immediately:', value);
+                target[property] = value;
+                return true;
+              }
+
+              // Check if this script should be deferred
+              if (shouldDeferScript(value)) {
+                log('Deferring script:', value);
+
+                // Store the script for later execution
+                STATE.queuedScripts.push({
+                  element: target,
+                  src: value,
+                  attributes: {}
+                });
+
+                // Don't set src yet - we'll do it after interaction/idle
+                return true;
+              }
+            }
+
+            // For all other properties, set normally
+            target[property] = value;
+            return true;
           }
-        } catch (e) {}
+        });
+
+        return scriptProxy;
       }
+
+      return element;
     };
-    x.send(null);
-  } catch (e) {}
+  }
+
+  /**
+   * Observe DOM for dynamically added scripts
+   */
+  function observeScripts() {
+    const observer = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
+        mutation.addedNodes.forEach(node => {
+          if (node.nodeType !== 1) return; // Element nodes only
+
+          // Check if it's a script
+          if (node.tagName === 'SCRIPT' && node.src) {
+            if (STATE.processedElements.has(node)) return;
+            STATE.processedElements.add(node);
+
+            const src = node.src;
+
+            // Allow whitelisted scripts
+            if (shouldAllowScript(src)) {
+              log('Observer: Allowing script', src);
+              return;
+            }
+
+            // Defer non-whitelisted scripts
+            if (shouldDeferScript(src)) {
+              log('Observer: Deferring script', src);
+
+              // Remove from DOM
+              const originalSrc = node.src;
+              node.src = '';
+              node.removeAttribute('src');
+
+              // Queue for later
+              STATE.queuedScripts.push({
+                element: node,
+                src: originalSrc,
+                parent: node.parentNode,
+                nextSibling: node.nextSibling
+              });
+
+              node.remove();
+            }
+          }
+
+          // Check for images and iframes to lazy load
+          if (node.tagName === 'IMG' || node.tagName === 'IFRAME') {
+            if (STATE.processedElements.has(node)) return;
+            STATE.processedElements.add(node);
+
+            // Skip if already has loading="lazy"
+            if (node.loading === 'lazy') return;
+
+            // Apply lazy loading
+            if (node.src && !node.dataset.speedLayerProcessed) {
+              node.dataset.speedLayerProcessed = 'true';
+
+              // For above-the-fold content, allow immediate loading
+              const rect = node.getBoundingClientRect();
+              const isAboveFold = rect.top < window.innerHeight * 1.5;
+
+              if (!isAboveFold) {
+                log('Lazy loading:', node.tagName, node.src);
+                node.loading = 'lazy';
+              }
+            }
+          }
+        });
+      });
+    });
+
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true
+    });
+
+    STATE.observerActive = true;
+    log('DOM observer active');
+  }
+
+  // =============================================================================
+  // DEFERRED SCRIPT EXECUTION
+  // =============================================================================
+
+  /**
+   * Execute all queued scripts
+   */
+  function executeQueuedScripts() {
+    log('Executing queued scripts', STATE.queuedScripts.length);
+
+    STATE.queuedScripts.forEach(item => {
+      const { element, src, parent, nextSibling } = item;
+
+      // Create a new script element to ensure proper execution
+      const newScript = document.createElement('script');
+      newScript.src = src;
+
+      // Copy attributes
+      Array.from(element.attributes || []).forEach(attr => {
+        if (attr.name !== 'src') {
+          newScript.setAttribute(attr.name, attr.value);
+        }
+      });
+
+      // Insert into DOM
+      if (parent) {
+        parent.insertBefore(newScript, nextSibling);
+      } else {
+        document.head.appendChild(newScript);
+      }
+
+      log('Executed deferred script:', src);
+    });
+
+    STATE.queuedScripts = [];
+  }
+
+  /**
+   * Handle user interaction - load deferred resources
+   */
+  function onUserInteraction() {
+    if (STATE.userInteracted) return;
+
+    STATE.userInteracted = true;
+    log('User interaction detected');
+
+    // Remove event listeners
+    CONFIG.interactionEvents.forEach(event => {
+      document.removeEventListener(event, onUserInteraction, { capture: true, passive: true });
+    });
+
+    // Execute deferred scripts
+    executeQueuedScripts();
+  }
+
+  /**
+   * Handle idle callback - load remaining deferred resources
+   */
+  function onIdle() {
+    if (STATE.idleCallbackFired) return;
+
+    STATE.idleCallbackFired = true;
+    log('Idle callback fired');
+
+    // Execute deferred scripts if user hasn't interacted yet
+    if (!STATE.userInteracted) {
+      executeQueuedScripts();
+    }
+  }
+
+  /**
+   * Set up interaction and idle listeners
+   */
+  function setupTriggers() {
+    // Listen for user interactions
+    CONFIG.interactionEvents.forEach(event => {
+      document.addEventListener(event, onUserInteraction, { capture: true, passive: true });
+    });
+
+    // Use requestIdleCallback if available, otherwise setTimeout
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(onIdle, { timeout: CONFIG.idleTimeout });
+    } else {
+      setTimeout(onIdle, CONFIG.idleTimeout);
+    }
+
+    log('Interaction triggers set up');
+  }
+
+  /**
+   * Force load all deferred resources (for debugging)
+   */
+  function forceLoadAll() {
+    log('Force loading all resources');
+    executeQueuedScripts();
+  }
+
+  // =============================================================================
+  // INITIALIZATION
+  // =============================================================================
+
+  /**
+   * Initialize the speed layer
+   */
+  function init() {
+    log('Initializing Speed Layer for:', CONFIG.domain);
+
+    // Start intercepting scripts immediately
+    interceptScripts();
+
+    // Load manifest and continue initialization
+    loadManifest().then(manifest => {
+      if (!manifest) {
+        console.error('[SpeedLayer] Failed to initialize - no manifest');
+        return;
+      }
+
+      // Apply optimization hints
+      applyPreconnects();
+      applyPreloads();
+      injectCriticalCSS();
+
+      // Start observing DOM
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', observeScripts);
+      } else {
+        observeScripts();
+      }
+
+      // Set up deferred loading triggers
+      setupTriggers();
+
+      log('Speed Layer initialized successfully');
+    });
+  }
+
+  // Start immediately
+  init();
+
 })();
