@@ -10,12 +10,12 @@
     "bootstrap",
     "core.js",
     "main.js",
-    "vendor.js",
-    "autoleadstar.com",
-    "cdn.autoleadstar.com",
-    "dai.autoleadstar.com/"
+    "vendor.js"
   ],
   "deferScripts": [
+    "autoleadstar.com",
+    "cdn.autoleadstar.com",
+    "dai.autoleadstar.com",
     "google-analytics.com",
     "googletagmanager.com",
     "gtag",
