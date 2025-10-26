@@ -16,9 +16,11 @@
         manifestLoaded: false,
         userInteracted: false,
         idleCallbackFired: false,
+        delayedCallbackFired: false,
         observerActive: false,
         processedElements: new WeakSet(),
         queuedScripts: [],
+        queuedDelayedScripts: [],
         queuedMedia: [],
         queuedIframes: [],
         performanceMarks: {}
@@ -30,6 +32,7 @@
         scriptTag: document.currentScript,
         interactionEvents: ['mousedown', 'keydown', 'touchstart', 'pointerdown', 'click'],
         idleTimeout: 3000,
+        delayedTimeout: 10000,
         lazyLoadThreshold: 1.5
     };
 
@@ -101,6 +104,12 @@
         if (!STATE.manifest || !src) return true;
         const deferList = STATE.manifest.deferScripts || [];
         return matchesPattern(src, deferList);
+    }
+
+    function shouldDelayScript(src) {
+        if (!STATE.manifest || !src) return false;
+        const delayedList = STATE.manifest.delayedScripts || [];
+        return matchesPattern(src, delayedList);
     }
 
     // =============================================================================
@@ -278,6 +287,26 @@
                             return;
                         }
 
+                        if (shouldDelayScript(src)) {
+                            log('Observer: ⏰ Delaying script (10s)', src);
+
+                            const originalSrc = node.src;
+                            const parent = node.parentNode;
+                            const nextSibling = node.nextSibling;
+
+                            node.src = '';
+                            node.removeAttribute('src');
+                            node.remove();
+
+                            STATE.queuedDelayedScripts.push({
+                                element: node,
+                                src: originalSrc,
+                                parent: parent,
+                                nextSibling: nextSibling
+                            });
+                            return;
+                        }
+
                         if (shouldDeferScript(src)) {
                             log('Observer: ⏸ Deferring script', src);
 
@@ -305,6 +334,28 @@
                         // Check if iframe should be allowed immediately (e.g., chat widgets)
                         if (shouldAllowScript(node.src)) {
                             log('✓ Allowing iframe immediately:', node.src);
+                            return;
+                        }
+
+                        // Check if iframe should be delayed
+                        if (shouldDelayScript(node.src)) {
+                            log('Observer: ⏰ Delaying iframe (10s)', node.src);
+
+                            const originalSrc = node.src;
+                            const parent = node.parentNode;
+                            const nextSibling = node.nextSibling;
+
+                            node.src = '';
+                            node.removeAttribute('src');
+                            node.remove();
+
+                            STATE.queuedDelayedScripts.push({
+                                element: node,
+                                src: originalSrc,
+                                parent: parent,
+                                nextSibling: nextSibling,
+                                isIframe: true
+                            });
                             return;
                         }
 
@@ -406,6 +457,56 @@
         STATE.queuedIframes = [];
     }
 
+    function executeDelayedScripts() {
+        if (STATE.queuedDelayedScripts.length === 0) return;
+
+        log(`Executing ${STATE.queuedDelayedScripts.length} delayed scripts`);
+        mark('delayed-scripts-execution-start');
+
+        STATE.queuedDelayedScripts.forEach(item => {
+            const { element, src, parent, nextSibling, isIframe } = item;
+
+            if (isIframe) {
+                const newIframe = document.createElement('iframe');
+                newIframe.src = src;
+
+                Array.from(element.attributes || []).forEach(attr => {
+                    if (attr.name !== 'src') {
+                        newIframe.setAttribute(attr.name, attr.value);
+                    }
+                });
+
+                if (parent && parent.isConnected) {
+                    parent.insertBefore(newIframe, nextSibling);
+                } else {
+                    document.body.appendChild(newIframe);
+                }
+
+                log('✓ Executed delayed iframe:', src);
+            } else {
+                const newScript = document.createElement('script');
+                newScript.src = src;
+
+                Array.from(element.attributes || []).forEach(attr => {
+                    if (attr.name !== 'src') {
+                        newScript.setAttribute(attr.name, attr.value);
+                    }
+                });
+
+                if (parent && parent.isConnected) {
+                    parent.insertBefore(newScript, nextSibling);
+                } else {
+                    document.head.appendChild(newScript);
+                }
+
+                log('✓ Executed delayed script:', src);
+            }
+        });
+
+        STATE.queuedDelayedScripts = [];
+        mark('delayed-scripts-execution-complete');
+    }
+
     function onUserInteraction(event) {
         if (STATE.userInteracted) return;
 
@@ -419,6 +520,7 @@
 
         executeQueuedScripts();
         executeQueuedIframes();
+        executeDelayedScripts();
     }
 
     function onIdle() {
@@ -431,6 +533,18 @@
         if (!STATE.userInteracted) {
             executeQueuedScripts();
             executeQueuedIframes();
+        }
+    }
+
+    function onDelayed() {
+        if (STATE.delayedCallbackFired) return;
+
+        STATE.delayedCallbackFired = true;
+        mark('delayed-callback');
+        log('Delayed callback fired (10s)');
+
+        if (!STATE.userInteracted) {
+            executeDelayedScripts();
         }
     }
 
@@ -449,18 +563,22 @@
             setTimeout(onIdle, CONFIG.idleTimeout);
         }
 
+        // Set up delayed timeout for delayedScripts (10 seconds default)
+        setTimeout(onDelayed, CONFIG.delayedTimeout);
+
         window.addEventListener('load', () => {
             setTimeout(onIdle, 1000);
         }, { once: true });
 
         mark('triggers-setup');
-        log('Triggers configured');
+        log('Triggers configured (defer: ' + CONFIG.idleTimeout + 'ms, delayed: ' + CONFIG.delayedTimeout + 'ms)');
     }
 
     function forceLoadAll() {
         log('Force loading all resources');
         executeQueuedScripts();
         executeQueuedIframes();
+        executeDelayedScripts();
     }
 
     // =============================================================================
@@ -481,6 +599,12 @@
             if (manifest.idleTimeout) {
                 CONFIG.idleTimeout = manifest.idleTimeout;
                 log('Custom idle timeout configured:', CONFIG.idleTimeout + 'ms');
+            }
+
+            // Apply custom delayed timeout from manifest
+            if (manifest.delayedTimeout) {
+                CONFIG.delayedTimeout = manifest.delayedTimeout;
+                log('Custom delayed timeout configured:', CONFIG.delayedTimeout + 'ms');
             }
 
             // Only intercept scripts if not disabled in manifest

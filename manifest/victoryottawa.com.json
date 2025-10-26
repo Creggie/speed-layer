@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "debug": true,
   "disableInterception": true,
-  "idleTimeout": 10000,
+  "idleTimeout": 3000,
+  "delayedTimeout": 10000,
   "allowScripts": [
     "dealerinspire.com",
     "di-assets.com",
@@ -14,9 +15,6 @@
     "vendor.js"
   ],
   "deferScripts": [
-    "autoleadstar.com",
-    "cdn.autoleadstar.com",
-    "dai.autoleadstar.com",
     "google-analytics.com",
     "googletagmanager.com",
     "gtag",
@@ -32,6 +30,11 @@
     "crazyegg",
     "quantcast",
     "bing.com/clarity"
+  ],
+  "delayedScripts": [
+    "autoleadstar.com",
+    "cdn.autoleadstar.com",
+    "dai.autoleadstar.com"
   ],
   "preconnect": [
     "https://fonts.googleapis.com",
