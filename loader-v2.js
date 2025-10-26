@@ -451,7 +451,8 @@
         STATE.queuedScripts.forEach(item => {
             const { element, src, parent, nextSibling } = item;
 
-            const newScript = document.createElement('script');
+            // Use originalCreateElement to bypass Proxy interception
+            const newScript = originalCreateElement ? originalCreateElement.call(document, 'script') : document.createElement('script');
             newScript.src = src;
 
             Array.from(element.attributes || []).forEach(attr => {
@@ -499,7 +500,8 @@
             const { element, src, parent, nextSibling, isIframe } = item;
 
             if (isIframe) {
-                const newIframe = document.createElement('iframe');
+                // Use originalCreateElement to bypass Proxy interception
+                const newIframe = originalCreateElement ? originalCreateElement.call(document, 'iframe') : document.createElement('iframe');
                 newIframe.src = src;
 
                 Array.from(element.attributes || []).forEach(attr => {
@@ -516,7 +518,8 @@
 
                 log('✓ Executed delayed iframe:', src);
             } else {
-                const newScript = document.createElement('script');
+                // Use originalCreateElement to bypass Proxy interception
+                const newScript = originalCreateElement ? originalCreateElement.call(document, 'script') : document.createElement('script');
                 newScript.src = src;
 
                 Array.from(element.attributes || []).forEach(attr => {
