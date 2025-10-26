@@ -16,7 +16,9 @@
     "di-modal",
     "core.js",
     "main.js",
-    "vendor.js"
+    "vendor.js",
+    "cdn.autofi.com",
+    "autofi.com"
   ],
   "deferScripts": [
     "google-analytics.com",
@@ -43,8 +45,6 @@
     "autoleadstar.com",
     "api.mapbox.com",
     "cdn.revolutionparts.com",
-    "cdn.autofi.com",
-    "autofi.com",
     "hotjar",
     "crazyegg",
     "online-shopper",
