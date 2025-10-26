@@ -9,7 +9,10 @@
     "bootstrap",
     "core.js",
     "main.js",
-    "vendor.js"
+    "vendor.js",
+    "autoleadstar.com",
+    "cdn.autoleadstar.com",
+    "dai.autoleadstar.com"
   ],
   "deferScripts": [
     "google-analytics.com",
@@ -26,16 +29,16 @@
     "mouseflow",
     "crazyegg",
     "quantcast",
-    "bing.com/clarity",
-    "autoleadstar.com",
-    "cdn.autoleadstar.com",
-    "dai.autoleadstar.com/"
+    "bing.com/clarity"
   ],
   "preconnect": [
     "https://fonts.googleapis.com",
     "https://fonts.gstatic.com",
     "https://www.google-analytics.com",
-    "https://www.googletagmanager.com"
+    "https://www.googletagmanager.com",
+    "https://autoleadstar.com",
+    "https://cdn.autoleadstar.com",
+    "https://dai.autoleadstar.com"
   ],
   "preload": [
     {
