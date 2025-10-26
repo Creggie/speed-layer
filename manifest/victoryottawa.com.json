@@ -15,6 +15,14 @@
     "vendor.js"
   ],
   "deferScripts": [
+    "swiper",
+    "online-shopper",
+    "font-awesome",
+    "animate.min.css",
+    "di-stacks",
+    "di-modal",
+    "datadog",
+    "datadoghq",
     "google-analytics.com",
     "googletagmanager.com",
     "gtag",
