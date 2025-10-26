@@ -301,18 +301,24 @@
           if (node.tagName === 'IFRAME' && node.src) {
             if (STATE.processedElements.has(node)) return;
             STATE.processedElements.add(node);
-            
+
+            // Check if iframe should be allowed immediately (e.g., chat widgets)
+            if (shouldAllowScript(node.src)) {
+              log('✓ Allowing iframe immediately:', node.src);
+              return;
+            }
+
             const rect = node.getBoundingClientRect();
             const isAboveFold = rect.top < window.innerHeight * CONFIG.lazyLoadThreshold;
-            
+
             if (!isAboveFold) {
               log('Lazy loading iframe:', node.src);
-              
+
               const originalSrc = node.src;
               node.src = '';
               node.dataset.src = originalSrc;
               node.loading = 'lazy';
-              
+
               STATE.queuedIframes.push({
                 element: node,
                 src: originalSrc
