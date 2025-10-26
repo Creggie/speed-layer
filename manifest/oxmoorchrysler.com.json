@@ -11,7 +11,6 @@
     "bootstrap",
     "swiper",
     "font-awesome",
-    "online-shopper",
     "animate",
     "di-stacks",
     "di-modal",
@@ -30,18 +29,27 @@
     "doubleclick.net",
     "adservice",
     "tracking",
-    "hotjar",
     "mouseflow",
     "crazyegg",
     "quantcast",
     "bing.com/clarity",
     "datadog",
     "datadoghq",
-    "callrail"
+    "callrail",
+    "complyauto.com"
   ],
   "delayedScripts": [
     "stripe.com",
-    "autoleadstar.com"
+    "autoleadstar.com",
+    "api.mapbox.com",
+    "cdn.revolutionparts.com",
+    "cdn.autofi.com",
+    "autofi.com",
+    "hotjar",
+    "crazyegg",
+    "online-shopper",
+    "cdn.gubagoo.io",
+    "gubagoo.io"
   ],
   "preconnect": [
     "https://fonts.googleapis.com",
