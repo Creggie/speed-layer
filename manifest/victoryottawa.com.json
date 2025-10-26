@@ -4,7 +4,7 @@
   "debug": true,
   "disableInterception": true,
   "idleTimeout": 3000,
-  "delayedTimeout": 10000,
+  "delayedTimeout": 15000,
   "allowScripts": [
     "dealerinspire.com",
     "di-assets.com",
