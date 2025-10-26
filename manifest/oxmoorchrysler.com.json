@@ -39,7 +39,10 @@
     "datadoghq",
     "callrail"
   ],
-  "delayedScripts": [],
+  "delayedScripts": [
+    "stripe.com",
+    "autoleadstar.com"
+  ],
   "preconnect": [
     "https://fonts.googleapis.com",
     "https://fonts.gstatic.com",
