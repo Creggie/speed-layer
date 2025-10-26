@@ -2,6 +2,7 @@
   "domain": "victoryottawa.com",
   "version": "1.0.0",
   "debug": true,
+  "disableInterception": true,
   "allowScripts": [
     "dealerinspire.com",
     "di-assets.com",

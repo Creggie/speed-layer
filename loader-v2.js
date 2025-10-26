@@ -471,12 +471,18 @@
         mark('init-start');
         log('Initializing Speed Layer v2 for:', CONFIG.domain);
 
-        interceptScripts();
-
         loadManifest().then(manifest => {
             if (!manifest) {
                 console.error('[SpeedLayer] Failed to initialize - no manifest');
                 return;
+            }
+
+            // Only intercept scripts if not disabled in manifest
+            if (!manifest.disableInterception) {
+                interceptScripts();
+                log('Script interception enabled');
+            } else {
+                log('Script interception disabled - using DOM observer only');
             }
 
             mark('manifest-loaded');
