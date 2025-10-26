@@ -222,8 +222,14 @@
     // SCRIPT INTERCEPTION - ENHANCED
     // =============================================================================
 
+    let originalCreateElement = null;
+    let proxyInterceptionActive = false;
+
     function interceptScripts() {
-        const originalCreateElement = document.createElement;
+        if (proxyInterceptionActive) return; // Already active
+
+        originalCreateElement = document.createElement;
+        proxyInterceptionActive = true;
 
         document.createElement = function (tagName) {
             const element = originalCreateElement.call(document, tagName);
@@ -240,8 +246,23 @@
                                 return true;
                             }
 
+                            if (shouldDelayScript(value)) {
+                                log('⏰ Delaying script (via Proxy):', value);
+
+                                STATE.queuedDelayedScripts.push({
+                                    element: target,
+                                    src: value,
+                                    type: target.type || 'text/javascript',
+                                    async: target.async,
+                                    defer: target.defer,
+                                    attributes: Array.from(target.attributes || [])
+                                });
+
+                                return true;
+                            }
+
                             if (shouldDeferScript(value)) {
-                                log('⏸ Deferring script:', value);
+                                log('⏸ Deferring script (via Proxy):', value);
 
                                 STATE.queuedScripts.push({
                                     element: target,
@@ -268,6 +289,17 @@
         };
 
         mark('script-interception-setup');
+        log('Proxy interception active');
+    }
+
+    function disableProxyInterception() {
+        if (!proxyInterceptionActive) return;
+
+        if (originalCreateElement) {
+            document.createElement = originalCreateElement;
+            proxyInterceptionActive = false;
+            log('Proxy interception disabled (keeping DOM observer)');
+        }
     }
 
     function observeScripts() {
@@ -587,8 +619,14 @@
 
     function init() {
         mark('init-start');
-        log('Initializing Speed Layer v2 for:', CONFIG.domain);
+        console.log('[SpeedLayer v2] Initializing for:', CONFIG.domain);
 
+        // PHASE 1: Start Proxy interception immediately (before manifest loads)
+        // This catches early scripts that load during manifest fetch
+        interceptScripts();
+        console.log('[SpeedLayer v2] Phase 1: Proxy interception started (catching early scripts)');
+
+        // PHASE 2: Load manifest and conditionally adjust interception
         loadManifest().then(manifest => {
             if (!manifest) {
                 console.error('[SpeedLayer] Failed to initialize - no manifest');
@@ -607,12 +645,13 @@
                 log('Custom delayed timeout configured:', CONFIG.delayedTimeout + 'ms');
             }
 
-            // Only intercept scripts if not disabled in manifest
-            if (!manifest.disableInterception) {
-                interceptScripts();
-                log('Script interception enabled');
+            // Check if we should disable Proxy interception (but keep DOM observer)
+            if (manifest.disableInterception) {
+                disableProxyInterception();
+                log('Phase 2: Proxy interception disabled (ComplyAuto compatibility mode)');
+                log('DOM observer will still catch dynamically added scripts');
             } else {
-                log('Script interception disabled - using DOM observer only');
+                log('Phase 2: Proxy interception confirmed active');
             }
 
             mark('manifest-loaded');
@@ -622,6 +661,7 @@
             injectCriticalCSS();
             optimizeFonts();
 
+            // Always start DOM observer (safe for all sites)
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', () => {
                     observeScripts();

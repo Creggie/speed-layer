@@ -2,7 +2,7 @@
   "domain": "oxmoorchrysler.com",
   "version": "1.0.0",
   "debug": true,
-  "disableInterception": true,
+  "disableInterception": false,
   "idleTimeout": 3000,
   "allowScripts": [
     "dealerinspire.com",
