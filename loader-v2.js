@@ -477,6 +477,12 @@
                 return;
             }
 
+            // Apply custom idle timeout from manifest
+            if (manifest.idleTimeout) {
+                CONFIG.idleTimeout = manifest.idleTimeout;
+                log('Custom idle timeout configured:', CONFIG.idleTimeout + 'ms');
+            }
+
             // Only intercept scripts if not disabled in manifest
             if (!manifest.disableInterception) {
                 interceptScripts();
