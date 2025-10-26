@@ -28,7 +28,8 @@
     "quantcast",
     "bing.com/clarity",
     "autoleadstar.com",
-    "cdn.autoleadstar.com"
+    "cdn.autoleadstar.com",
+    "dai.autoleadstar.com/"
   ],
   "preconnect": [
     "https://fonts.googleapis.com",
