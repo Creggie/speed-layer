@@ -142,10 +142,10 @@ Add this script tag to the `<head>` section of your DealerOn site, **as early as
         data-manifest="https://cdn.jsdelivr.net/gh/Creggie/speed-layer@main/manifest/"></script>
 ```
 
-**Note**: This uses `@main` branch. For production, use a specific commit hash (will be updated after commit):
+**Note**: This uses `@main` branch. For production, use a specific commit hash:
 ```html
-<script src="https://cdn.jsdelivr.net/gh/Creggie/speed-layer@COMMIT_HASH/loader-do.js"
-        data-manifest="https://cdn.jsdelivr.net/gh/Creggie/speed-layer@COMMIT_HASH/manifest/"></script>
+<script src="https://cdn.jsdelivr.net/gh/Creggie/speed-layer@587f3d0/loader-do.js"
+        data-manifest="https://cdn.jsdelivr.net/gh/Creggie/speed-layer@587f3d0/manifest/"></script>
 ```
 
 ### Step 2: Verify Manifest Loading
