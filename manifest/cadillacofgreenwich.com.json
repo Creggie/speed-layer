@@ -1,6 +1,7 @@
 {
   "domain": "cadillacofgreenwich.com",
   "version": "1.0.0",
+  "enabled": true,
   "debug": true,
   "disableInterception": true,
   "idleTimeout": 3000,

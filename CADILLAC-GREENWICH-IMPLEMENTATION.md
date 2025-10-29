@@ -335,6 +335,7 @@ window.__SPEED_LAYER_DO__.version   // Returns "1.0.0-dealeron"
 - **Timing adjustable**: Modify `idleTimeout` (3s) and `delayedTimeout` (10s) as needed
 - **Pattern matching**: All patterns use substring matching (e.g., "dealeron.js" matches any URL containing that string)
 - **Typekit optimization**: Automatically adds font-display=swap to Adobe Typekit fonts
+- **Pause control**: Set `"enabled": false` in manifest to temporarily disable Speed Layer (see [PAUSE-CONTROL.md](../PAUSE-CONTROL.md))
 
 ---
 

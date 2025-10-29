@@ -1,6 +1,7 @@
 {
   "domain": "oxmoorchrysler.com",
   "version": "1.0.0",
+  "enabled": true,
   "debug": true,
   "disableInterception": false,
   "idleTimeout": 3000,

@@ -636,6 +636,16 @@
                 return;
             }
 
+            // Check if Speed Layer is enabled for this domain
+            if (manifest.enabled === false) {
+                console.log('[SpeedLayer v2] ⏸ Speed Layer is DISABLED in manifest for:', CONFIG.domain);
+                console.log('[SpeedLayer v2] Site will load normally without script deferral');
+                console.log('[SpeedLayer v2] To enable, set "enabled": true in manifest');
+                // Disable Proxy to let everything load normally
+                disableProxyInterception();
+                return;
+            }
+
             // Apply custom idle timeout from manifest
             if (manifest.idleTimeout) {
                 CONFIG.idleTimeout = manifest.idleTimeout;
