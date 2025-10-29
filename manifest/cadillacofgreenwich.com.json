@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "enabled": true,
   "debug": true,
+  "pages": {
+    "mode": "include",
+    "patterns": ["/"]
+  },
   "disableInterception": true,
   "idleTimeout": 3000,
   "delayedTimeout": 10000,
@@ -78,6 +82,7 @@
   "notes": {
     "platform": "DealerOn CMS v22.92.0",
     "dealerId": "27114",
+    "pages": "HOMEPAGE ONLY - Currently set to include mode with pattern '/'. Speed Layer only runs on homepage. To enable site-wide, change mode to 'all' or add more patterns.",
     "allowScripts": "DealerOn core platform scripts - must load immediately for site functionality. Includes jQuery, Bootstrap, navigation, forms, and core components.",
     "deferScripts": "Analytics and tracking scripts deferred to 3 seconds or user interaction. Includes 5 GTM containers, DealerOn tagging, and third-party analytics.",
     "delayedScripts": "Heavy widgets and personalization delayed to 10 seconds. Includes chat (CarCode SMS), personalization engine, banner system, price tracking, and Harmoniq CRM.",

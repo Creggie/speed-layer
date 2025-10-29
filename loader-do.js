@@ -125,6 +125,81 @@
     }
 
     // =============================================================================
+    // PAGE DETECTION - DEALERON SPECIFIC
+    // =============================================================================
+
+    function matchesPagePattern(pathname, pattern) {
+        // Exact match
+        if (pathname === pattern) return true;
+
+        // Wildcard match (e.g., "/inventory/*")
+        if (pattern.includes('*')) {
+            const regexPattern = pattern
+                .replace(/\*/g, '.*')
+                .replace(/\//g, '\\/');
+            const regex = new RegExp(`^${regexPattern}$`);
+            return regex.test(pathname);
+        }
+
+        // Starts with match
+        if (pattern.endsWith('/') && pathname.startsWith(pattern)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    function shouldRunOnCurrentPage() {
+        if (!STATE.manifest || !STATE.manifest.pages) {
+            // No page config = run on all pages (default behavior)
+            return true;
+        }
+
+        const pageConfig = STATE.manifest.pages;
+        const mode = pageConfig.mode || 'all';
+        const patterns = pageConfig.patterns || [];
+        const currentPath = window.location.pathname;
+
+        log('Page detection:', {
+            mode: mode,
+            currentPath: currentPath,
+            patterns: patterns
+        });
+
+        // Mode: "all" - run on all pages
+        if (mode === 'all') {
+            log('Page mode: ALL - running on all pages');
+            return true;
+        }
+
+        // Mode: "include" - only run on matching pages (whitelist)
+        if (mode === 'include') {
+            const matches = patterns.some(pattern => matchesPagePattern(currentPath, pattern));
+            if (matches) {
+                log('✓ Page INCLUDED - Speed Layer will run');
+            } else {
+                log('✗ Page NOT in include list - Speed Layer will NOT run');
+            }
+            return matches;
+        }
+
+        // Mode: "exclude" - run on all pages EXCEPT matching ones (blacklist)
+        if (mode === 'exclude') {
+            const matches = patterns.some(pattern => matchesPagePattern(currentPath, pattern));
+            if (matches) {
+                log('✗ Page EXCLUDED - Speed Layer will NOT run');
+            } else {
+                log('✓ Page not in exclude list - Speed Layer will run');
+            }
+            return !matches; // Invert the match
+        }
+
+        // Unknown mode - default to running
+        console.warn('[SpeedLayer-DO] Unknown page mode:', mode, '- defaulting to run');
+        return true;
+    }
+
+    // =============================================================================
     // MANIFEST LOADING
     // =============================================================================
 
@@ -670,6 +745,18 @@
                 disableProxyInterception();
                 return;
             }
+
+            // Check if Speed Layer should run on current page
+            if (!shouldRunOnCurrentPage()) {
+                console.log('[SpeedLayer-DO] 📄 Speed Layer NOT configured to run on this page:', window.location.pathname);
+                console.log('[SpeedLayer-DO] Page mode:', manifest.pages?.mode || 'all');
+                console.log('[SpeedLayer-DO] Page patterns:', manifest.pages?.patterns || 'none');
+                console.log('[SpeedLayer-DO] Site will load normally without script deferral on this page');
+                // Disable Proxy to let everything load normally
+                disableProxyInterception();
+                return;
+            }
+            console.log('[SpeedLayer-DO] ✓ Page check passed - Speed Layer will run on:', window.location.pathname);
 
             // Apply custom idle timeout from manifest
             if (manifest.idleTimeout) {
