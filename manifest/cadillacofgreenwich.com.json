@@ -65,7 +65,9 @@
     "validate.audio",
     "harmoniq",
     "sincrod.com",
-    "init.umd.js"
+    "init.umd.js",
+    "acsbapp.com",
+    "app.js"
   ],
   "preconnect": [
     "https://cdn.dlron.us",
