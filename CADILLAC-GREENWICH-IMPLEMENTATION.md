@@ -1,4 +1,4 @@
-# Speed Layer v2 Implementation Guide
+# Speed Layer - DealerOn Edition Implementation Guide
 ## Cadillac of Greenwich (DealerOn CMS)
 
 ---
@@ -98,13 +98,15 @@ These scripts are essential for DealerOn site functionality and must load withou
 
 ### Timing/Interception Decision
 
-**Chosen Approach**: Use `loader-v2.js` with `disableInterception: true`
+**Chosen Approach**: Use `loader-do.js` (DealerOn-specific loader) with `disableInterception: true`
 
 **Reasoning**:
-1. **ComplyAuto Compatibility**: Site uses ComplyAuto blocker.js which implements its own Proxy-based script interception (similar to Victory Ottawa)
-2. **Nested Proxy Conflict**: Running Speed Layer's Proxy alongside ComplyAuto's would cause "Illegal invocation" errors
-3. **DOM Observer Sufficient**: With `disableInterception: true`, the Proxy is disabled but DOM MutationObserver remains active for catching dynamically added scripts
-4. **Conservative Approach**: Minimizes risk while still providing significant performance gains
+1. **Separate CMS Loader**: Created dedicated loader for DealerOn CMS to keep v2 loader clean for other platforms (DealerInspire, WordPress, etc.)
+2. **ComplyAuto Compatibility**: Site uses ComplyAuto blocker.js which implements its own Proxy-based script interception (similar to Victory Ottawa)
+3. **Nested Proxy Conflict**: Running Speed Layer's Proxy alongside ComplyAuto's would cause "Illegal invocation" errors
+4. **DOM Observer Sufficient**: With `disableInterception: true`, the Proxy is disabled but DOM MutationObserver remains active for catching dynamically added scripts
+5. **DealerOn Optimizations**: Includes DealerOn-specific fallbacks and Typekit font optimization
+6. **Conservative Approach**: Minimizes risk while still providing significant performance gains
 
 ### Three-Tier Loading System
 
@@ -136,14 +138,14 @@ These scripts are essential for DealerOn site functionality and must load withou
 Add this script tag to the `<head>` section of your DealerOn site, **as early as possible** (preferably right after the opening `<head>` tag):
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/Creggie/speed-layer@main/loader-v2.js"
+<script src="https://cdn.jsdelivr.net/gh/Creggie/speed-layer@main/loader-do.js"
         data-manifest="https://cdn.jsdelivr.net/gh/Creggie/speed-layer@main/manifest/"></script>
 ```
 
-**Note**: This uses `@main` branch. For production, use a specific commit hash:
+**Note**: This uses `@main` branch. For production, use a specific commit hash (will be updated after commit):
 ```html
-<script src="https://cdn.jsdelivr.net/gh/Creggie/speed-layer@8857fab/loader-v2.js"
-        data-manifest="https://cdn.jsdelivr.net/gh/Creggie/speed-layer@8857fab/manifest/"></script>
+<script src="https://cdn.jsdelivr.net/gh/Creggie/speed-layer@COMMIT_HASH/loader-do.js"
+        data-manifest="https://cdn.jsdelivr.net/gh/Creggie/speed-layer@COMMIT_HASH/manifest/"></script>
 ```
 
 ### Step 2: Verify Manifest Loading
@@ -151,9 +153,9 @@ Add this script tag to the `<head>` section of your DealerOn site, **as early as
 After adding the script, open your browser's DevTools console and check for:
 
 ```
-[SpeedLayer v2] Initializing for: www.cadillacofgreenwich.com
-[SpeedLayer v2] Loading manifest from: https://cdn.jsdelivr.net/gh/Creggie/speed-layer@main/manifest/www.cadillacofgreenwich.com.json
-[SpeedLayer v2] Manifest loaded successfully
+[SpeedLayer-DO] Initializing for DealerOn CMS: www.cadillacofgreenwich.com
+[SpeedLayer-DO] Loading manifest from: https://cdn.jsdelivr.net/gh/Creggie/speed-layer@main/manifest/www.cadillacofgreenwich.com.json
+[SpeedLayer-DO] Manifest loaded successfully
 ```
 
 ### Step 3: Monitor Script Interception
@@ -161,24 +163,24 @@ After adding the script, open your browser's DevTools console and check for:
 Watch the console for these debug messages:
 
 ```
-[SpeedLayer v2] Phase 2: Proxy interception disabled (ComplyAuto compatibility mode)
-[SpeedLayer v2] DOM observer started
-[SpeedLayer v2] Allowed script: [script-url]
-[SpeedLayer v2] Deferred script: [script-url]
-[SpeedLayer v2] Delayed script: [script-url]
+[SpeedLayer-DO] Phase 2: Proxy interception disabled (ComplyAuto compatibility mode)
+[SpeedLayer-DO] DOM observer will still catch dynamically added scripts
+[SpeedLayer-DO] Observer: ✓ Allowing script [script-url]
+[SpeedLayer-DO] Observer: ⏸ Deferring script [script-url]
+[SpeedLayer-DO] Observer: ⏰ Delaying script (10s) [script-url]
 ```
 
 ### Step 4: Test User Interaction
 
 Click anywhere on the page and verify deferred scripts load:
 ```
-[SpeedLayer v2] User interacted, executing queued scripts
-[SpeedLayer v2] Executing 15 deferred scripts
+[SpeedLayer-DO] User interaction detected: click
+[SpeedLayer-DO] Executing 15 queued scripts
 ```
 
 After 10 seconds, delayed scripts should execute:
 ```
-[SpeedLayer v2] Executing 8 delayed scripts
+[SpeedLayer-DO] Executing 8 delayed scripts
 ```
 
 ---
@@ -234,24 +236,28 @@ After 10 seconds, delayed scripts should execute:
 
 ## 🐛 Debug Commands
 
-Access Speed Layer internals via browser console:
+Access Speed Layer DealerOn Edition internals via browser console:
 
 ```javascript
 // Get current state
-window.__SPEED_LAYER__
+window.__SPEED_LAYER_DO__
 
 // Force load all queued scripts
-window.__SPEED_LAYER__.forceLoadAll()
+window.__SPEED_LAYER_DO__.forceLoadAll()
 
 // Get performance metrics
-window.__SPEED_LAYER__.getMetrics()
+window.__SPEED_LAYER_DO__.getMetrics()
 
 // Check manifest
-window.__SPEED_LAYER__.state.manifest
+window.__SPEED_LAYER_DO__.state.manifest
 
 // Check queued scripts
-window.__SPEED_LAYER__.state.queuedScripts
-window.__SPEED_LAYER__.state.queuedDelayedScripts
+window.__SPEED_LAYER_DO__.state.queuedScripts
+window.__SPEED_LAYER_DO__.state.queuedDelayedScripts
+
+// Verify platform
+window.__SPEED_LAYER_DO__.platform  // Returns "DealerOn CMS"
+window.__SPEED_LAYER_DO__.version   // Returns "1.0.0-dealeron"
 ```
 
 ---
@@ -313,20 +319,22 @@ window.__SPEED_LAYER__.state.queuedDelayedScripts
 - `/workspaces/speed-layer/manifest/cadillacofgreenwich.com.json`
 
 ### Loader Location
-- `/workspaces/speed-layer/loader-v2.js`
+- `/workspaces/speed-layer/loader-do.js` (DealerOn-specific)
 
 ### CDN URLs
-- Loader: `https://cdn.jsdelivr.net/gh/Creggie/speed-layer@main/loader-v2.js`
+- Loader: `https://cdn.jsdelivr.net/gh/Creggie/speed-layer@main/loader-do.js`
 - Manifest: `https://cdn.jsdelivr.net/gh/Creggie/speed-layer@main/manifest/`
 
 ---
 
 ## 📝 Notes
 
-- **No loader-do.js needed**: loader-v2.js is flexible enough for DealerOn
+- **DealerOn-specific loader**: loader-do.js created specifically for DealerOn CMS sites
+- **Separate from v2**: Keeps loader-v2.js clean for other platforms (DealerInspire, WordPress, etc.)
 - **Debug mode enabled**: Set `"debug": false` in manifest for production
 - **Timing adjustable**: Modify `idleTimeout` (3s) and `delayedTimeout` (10s) as needed
 - **Pattern matching**: All patterns use substring matching (e.g., "dealeron.js" matches any URL containing that string)
+- **Typekit optimization**: Automatically adds font-display=swap to Adobe Typekit fonts
 
 ---
 
@@ -352,6 +360,7 @@ For issues or questions:
 ---
 
 **Implementation Date**: 2025-10-29
-**Speed Layer Version**: 2.0.0
+**Speed Layer Version**: 1.0.0-dealeron (DealerOn Edition)
+**Loader File**: loader-do.js
 **Manifest Version**: 1.0.0
 **Status**: Ready for testing
