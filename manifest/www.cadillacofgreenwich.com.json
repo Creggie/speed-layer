@@ -7,9 +7,9 @@
     "mode": "include",
     "patterns": ["/"]
   },
-  "disableInterception": true,
-  "idleTimeout": 3000,
-  "delayedTimeout": 10000,
+  "disableInterception": false,
+  "idleTimeout": 4000,
+  "delayedTimeout": 15000,
   "allowScripts": [
     "dealeron.js",
     "dealeron.static",
@@ -38,8 +38,6 @@
     "gtm.js",
     "analytics.js",
     "ga.js",
-    "dotagging.js",
-    "taggbaa.dealeron.com",
     "dealerOnTrack",
     "gmGlobalEvents",
     "facebook.net",
@@ -51,13 +49,17 @@
     "mouseflow",
     "crazyegg",
     "hotjar",
-    "quantcast"
+    "quantcast",
+    "complyauto.com",
+    "blocker.js",
+    "banner.js"
   ],
   "delayedScripts": [
+    "dotagging.js",
+    "taggbaa.dealeron.com",
     "prsnbaa.dealeron.com",
     "personalization.js",
     "banrsaa.dealeron.com",
-    "banner.js",
     "priceTrack",
     "vclwsaa",
     "carcodesms.com",
@@ -77,7 +79,23 @@
     "https://fonts.gstatic.com",
     "https://use.typekit.net"
   ],
-  "preload": [],
+  "preload": [
+    {
+      "url": "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css",
+      "as": "style",
+      "crossorigin": "anonymous"
+    },
+    {
+      "url": "https://use.typekit.net/hrx7xqc.css",
+      "as": "style",
+      "crossorigin": "anonymous"
+    },
+    {
+      "url": "https://use.typekit.net/gpc7ewp.css",
+      "as": "style",
+      "crossorigin": "anonymous"
+    }
+  ],
   "criticalCssInline": "",
   "notes": {
     "platform": "DealerOn CMS v22.92.0",
@@ -86,7 +104,7 @@
     "allowScripts": "DealerOn core platform scripts - must load immediately for site functionality. Includes jQuery, Bootstrap, navigation, forms, and core components.",
     "deferScripts": "Analytics and tracking scripts deferred to 3 seconds or user interaction. Includes 5 GTM containers, DealerOn tagging, and third-party analytics.",
     "delayedScripts": "Heavy widgets and personalization delayed to 10 seconds. Includes chat (CarCode SMS), personalization engine, banner system, price tracking, and Harmoniq CRM.",
-    "disableInterception": "Set to true due to ComplyAuto blocker.js compatibility (similar to Victory Ottawa). ComplyAuto uses its own Proxy interception which may conflict.",
+    "disableInterception": "Set to false for more aggressive script control. ComplyAuto is now deferred to avoid Proxy conflicts. Enabled for better PageSpeed optimization.",
     "gtmContainers": "GTM-KGGLWR3, GTM-PQW5KW8L, GTM-W33G7Q5, GTM-K7QPBHS, GTM-5HVJJR9F, GTM-MLHK883",
     "thirdPartyServices": {
       "compliance": "ComplyAuto cookie banner and blocker",
@@ -97,6 +115,6 @@
       "fonts": "Adobe Typekit (hrx7xqc, gpc7ewp)",
       "validation": "ValidateAudio tag validation"
     },
-    "optimizationStrategy": "Conservative approach with disableInterception due to ComplyAuto. DOM observer remains active for lazy loading. Core DealerOn scripts load immediately, analytics defer to 3s, heavy widgets delay to 10s."
+    "optimizationStrategy": "Aggressive PageSpeed optimization with Proxy interception enabled. ComplyAuto deferred to 4s. DealerOn tagging delayed to 15s. Core scripts load immediately, analytics defer to 4s, heavy widgets delay to 15s. CSS preloads added for Bootstrap Icons and Typekit fonts."
   }
 }
