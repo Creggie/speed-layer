@@ -7,9 +7,9 @@
     "mode": "include",
     "patterns": ["/"]
   },
-  "disableInterception": false,
-  "idleTimeout": 4000,
-  "delayedTimeout": 15000,
+  "disableInterception": true,
+  "idleTimeout": 3000,
+  "delayedTimeout": 10000,
   "allowScripts": [
     "dealeron.js",
     "dealeron.static",
@@ -50,13 +50,10 @@
     "crazyegg",
     "hotjar",
     "quantcast",
-    "complyauto.com",
-    "blocker.js",
-    "banner.js"
+    "dotagging.js",
+    "taggbaa.dealeron.com"
   ],
   "delayedScripts": [
-    "dotagging.js",
-    "taggbaa.dealeron.com",
     "prsnbaa.dealeron.com",
     "personalization.js",
     "banrsaa.dealeron.com",
@@ -79,32 +76,16 @@
     "https://fonts.gstatic.com",
     "https://use.typekit.net"
   ],
-  "preload": [
-    {
-      "url": "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css",
-      "as": "style",
-      "crossorigin": "anonymous"
-    },
-    {
-      "url": "https://use.typekit.net/hrx7xqc.css",
-      "as": "style",
-      "crossorigin": "anonymous"
-    },
-    {
-      "url": "https://use.typekit.net/gpc7ewp.css",
-      "as": "style",
-      "crossorigin": "anonymous"
-    }
-  ],
+  "preload": [],
   "criticalCssInline": "",
   "notes": {
     "platform": "DealerOn CMS v22.92.0",
     "dealerId": "27114",
     "pages": "HOMEPAGE ONLY - Currently set to include mode with pattern '/'. Speed Layer only runs on homepage. To enable site-wide, change mode to 'all' or add more patterns.",
     "allowScripts": "DealerOn core platform scripts - must load immediately for site functionality. Includes jQuery, Bootstrap, navigation, forms, and core components.",
-    "deferScripts": "Analytics and tracking scripts deferred to 3 seconds or user interaction. Includes 5 GTM containers, DealerOn tagging, and third-party analytics.",
+    "deferScripts": "Analytics and tracking scripts deferred to 3 seconds or user interaction. Includes GTM containers, DealerOn tagging, and third-party analytics.",
     "delayedScripts": "Heavy widgets and personalization delayed to 10 seconds. Includes chat (CarCode SMS), personalization engine, banner system, price tracking, and Harmoniq CRM.",
-    "disableInterception": "Set to false for more aggressive script control. ComplyAuto is now deferred to avoid Proxy conflicts. Enabled for better PageSpeed optimization.",
+    "disableInterception": "Set to true for compatibility with ComplyAuto compliance script. Uses DOM MutationObserver instead of Proxy interception for safer operation.",
     "gtmContainers": "GTM-KGGLWR3, GTM-PQW5KW8L, GTM-W33G7Q5, GTM-K7QPBHS, GTM-5HVJJR9F, GTM-MLHK883",
     "thirdPartyServices": {
       "compliance": "ComplyAuto cookie banner and blocker",
@@ -115,6 +96,6 @@
       "fonts": "Adobe Typekit (hrx7xqc, gpc7ewp)",
       "validation": "ValidateAudio tag validation"
     },
-    "optimizationStrategy": "Aggressive PageSpeed optimization with Proxy interception enabled. ComplyAuto deferred to 4s. DealerOn tagging delayed to 15s. Core scripts load immediately, analytics defer to 4s, heavy widgets delay to 15s. CSS preloads added for Bootstrap Icons and Typekit fonts."
+    "optimizationStrategy": "Safe PageSpeed optimization with DOM MutationObserver. ComplyAuto loads naturally for compliance. DealerOn tagging deferred to 3s. Core scripts load immediately, analytics defer to 3s, heavy widgets delay to 10s. Conservative approach for stability."
   }
 }
