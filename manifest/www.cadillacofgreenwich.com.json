@@ -39,16 +39,11 @@
     "analytics.js",
     "ga.js",
     "dealerOnTrack",
-    "gmGlobalEvents",
     "facebook.net",
     "fbevents.js",
     "doubleclick.net",
     "adservice",
     "tracking",
-    "bing.com/clarity",
-    "mouseflow",
-    "crazyegg",
-    "hotjar",
     "quantcast",
     "dotagging.js",
     "taggbaa.dealeron.com"
@@ -65,6 +60,11 @@
     "harmoniq",
     "sincrod.com",
     "init.umd.js"
+    "bing.com/clarity",
+    "mouseflow",
+    "crazyegg",
+    "gmGlobalEvents",
+    "hotjar",
   ],
   "preconnect": [
     "https://cdn.dlron.us",
