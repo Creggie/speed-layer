@@ -44,7 +44,8 @@
     "autoleadstar.com",
     "cdn.autoleadstar.com",
     "dai.autoleadstar.com",
-    "autoleadstar.com"
+    "autoleadstar.com",
+    "api.mapbox.com"
   ],
   "preconnect": [
     "https://fonts.googleapis.com",
