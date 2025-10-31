@@ -43,7 +43,8 @@
   "delayedScripts": [
     "autoleadstar.com",
     "cdn.autoleadstar.com",
-    "dai.autoleadstar.com"
+    "dai.autoleadstar.com",
+    "autoleadstar.com"
   ],
   "preconnect": [
     "https://fonts.googleapis.com",
