@@ -64,14 +64,13 @@
     "mouseflow",
     "crazyegg",
     "gmGlobalEvents",
-    "hotjar",
+    "hotjar"
   ],
   "preconnect": [
     "https://cdn.dlron.us",
     "https://taggbaa.dealeron.com",
     "https://prsnbaa.dealeron.com",
     "https://banrsaa.dealeron.com",
-    "https://www.googletagmanager.com",
     "https://fonts.googleapis.com",
     "https://fonts.gstatic.com",
     "https://use.typekit.net"
