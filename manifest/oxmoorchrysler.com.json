@@ -19,7 +19,6 @@
     "main.js",
     "vendor.js",
     "cdn.autofi.com",
-    "autofi.com"
   ],
   "deferScripts": [
     "google-analytics.com",
@@ -50,7 +49,8 @@
     "crazyegg",
     "online-shopper",
     "cdn.gubagoo.io",
-    "gubagoo.io"
+    "gubagoo.io",
+    "autofi.com"
   ],
   "preconnect": [
     "https://fonts.googleapis.com",
