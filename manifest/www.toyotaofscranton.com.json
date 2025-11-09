@@ -32,6 +32,7 @@
     "adservice",
     "tracking",
     "mouseflow",
+    "crazyegg",
     "quantcast",
     "bing.com/clarity",
     "datadog",
@@ -40,17 +41,14 @@
     "complyauto.com"
   ],
   "delayedScripts": [
-    "stripe.com",
-    "autoleadstar.com",
     "api.mapbox.com",
     "cdn.revolutionparts.com",
     "hotjar",
-    "crazyegg",
     "online-shopper",
     "cdn.gubagoo.io",
     "gubagoo.io",
-    "autofi.com",
-    "cdn.autoleadstar.com"
+    "sd.iperceptions.com",
+    "iperceptions.com"
   ],
   "preconnect": [
     "https://fonts.googleapis.com",
