@@ -34,23 +34,17 @@
     "crazyegg",
     "quantcast",
     "bing.com/clarity",
+    "datadog",
+    "datadoghq",
     "callrail",
     "complyauto.com"
   ],
   "delayedScripts": [
     "api.mapbox.com",
-    "cdn.revolutionparts.com",
     "hotjar",
+    "crazyegg",
     "online-shopper",
-    "cdn.gubagoo.io",
-    "gubagoo.io",
-    "sd.iperceptions.com",
-    "iperceptions.com",
-    "ver.ev5.ai",
-    "datadoghq-browser-agent.com",
-    "datadog",
-    "datadoghq",
-    "extremereach.io"
+
   ],
   "preconnect": [
     "https://fonts.googleapis.com",
