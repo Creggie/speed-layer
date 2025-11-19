@@ -37,7 +37,7 @@
     };
 
     window.__SPEED_LAYER__ = {
-        version: '2.0.0',
+        version: '2.0.1',
         state: STATE,
         config: CONFIG,
         forceLoadAll: forceLoadAll,
@@ -698,7 +698,7 @@
 
     function init() {
         mark('init-start');
-        console.log('[SpeedLayer v2] Initializing for:', CONFIG.domain);
+        console.log('[SpeedLayer v2.0.1] Initializing for:', CONFIG.domain);
 
         // PHASE 1: Start DOM observer immediately (safe for all sites)
         // Proxy interception will be started in Phase 2 if enabled in manifest
