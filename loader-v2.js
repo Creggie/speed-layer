@@ -236,6 +236,16 @@
 
             if (tagName.toLowerCase() === 'script') {
                 const scriptProxy = new Proxy(element, {
+                    get(target, property) {
+                        const value = target[property];
+
+                        // If it's a function, bind it to the target to prevent "Illegal invocation"
+                        if (typeof value === 'function') {
+                            return value.bind(target);
+                        }
+
+                        return value;
+                    },
                     set(target, property, value) {
                         if (property === 'src' && value) {
                             log('Script src detected:', value);
