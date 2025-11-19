@@ -235,19 +235,30 @@
             const element = originalCreateElement.call(document, tagName);
 
             if (tagName.toLowerCase() === 'script') {
+                // Track if script has been handled
+                let scriptHandled = false;
+
                 const scriptProxy = new Proxy(element, {
                     get(target, property) {
+                        // Return the target itself for special symbol properties
+                        if (typeof property === 'symbol') {
+                            return target[property];
+                        }
+
                         const value = target[property];
 
-                        // If it's a function, bind it to the target to prevent "Illegal invocation"
+                        // If it's a function, wrap it to maintain proper context
                         if (typeof value === 'function') {
-                            return value.bind(target);
+                            return function(...args) {
+                                return value.apply(target, args);
+                            };
                         }
 
                         return value;
                     },
                     set(target, property, value) {
-                        if (property === 'src' && value) {
+                        if (property === 'src' && value && !scriptHandled) {
+                            scriptHandled = true;
                             log('Script src detected:', value);
 
                             if (shouldAllowScript(value)) {
@@ -268,6 +279,7 @@
                                     attributes: Array.from(target.attributes || [])
                                 });
 
+                                // Prevent the script from loading by not setting src
                                 return true;
                             }
 
@@ -283,6 +295,7 @@
                                     attributes: Array.from(target.attributes || [])
                                 });
 
+                                // Prevent the script from loading by not setting src
                                 return true;
                             }
                         }
