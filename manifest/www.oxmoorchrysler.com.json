@@ -19,6 +19,9 @@
     "main.js",
     "vendor.js",
     "cdn.autofi.com",
+    "gtm.js",
+    "ECDataLayer",
+    "RoxanneLoader"
   ],
   "deferScripts": [
     "google-analytics.com",
