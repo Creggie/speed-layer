@@ -700,12 +700,20 @@
         mark('init-start');
         console.log('[SpeedLayer v2] Initializing for:', CONFIG.domain);
 
-        // PHASE 1: Start Proxy interception immediately (before manifest loads)
-        // This catches early scripts that load during manifest fetch
-        interceptScripts();
-        console.log('[SpeedLayer v2] Phase 1: Proxy interception started (catching early scripts)');
+        // PHASE 1: Start DOM observer immediately (safe for all sites)
+        // Proxy interception will be started in Phase 2 if enabled in manifest
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                observeScripts();
+                mark('dom-observer-early');
+            });
+        } else {
+            observeScripts();
+            mark('dom-observer-early');
+        }
+        console.log('[SpeedLayer v2] Phase 1: DOM observer started early');
 
-        // PHASE 2: Load manifest and conditionally adjust interception
+        // PHASE 2: Load manifest and conditionally start Proxy interception
         loadManifest().then(manifest => {
             if (!manifest) {
                 console.error('[SpeedLayer] Failed to initialize - no manifest');
@@ -734,13 +742,13 @@
                 log('Custom delayed timeout configured:', CONFIG.delayedTimeout + 'ms');
             }
 
-            // Check if we should disable Proxy interception (but keep DOM observer)
+            // Check if we should enable Proxy interception
             if (manifest.disableInterception) {
-                disableProxyInterception();
-                log('Phase 2: Proxy interception disabled (ComplyAuto compatibility mode)');
-                log('DOM observer will still catch dynamically added scripts');
+                console.log('[SpeedLayer v2] Phase 2: Proxy interception DISABLED (compatibility mode)');
+                console.log('[SpeedLayer v2] Relying on DOM observer only');
             } else {
-                log('Phase 2: Proxy interception confirmed active');
+                interceptScripts();
+                console.log('[SpeedLayer v2] Phase 2: Proxy interception ENABLED');
             }
 
             mark('manifest-loaded');
@@ -749,16 +757,6 @@
             applyPreloads();
             injectCriticalCSS();
             optimizeFonts();
-
-            // Always start DOM observer (safe for all sites)
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', () => {
-                    observeScripts();
-                    mark('dom-ready');
-                });
-            } else {
-                observeScripts();
-            }
 
             setupTriggers();
 
