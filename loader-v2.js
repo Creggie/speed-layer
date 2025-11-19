@@ -442,6 +442,44 @@
     // DEFERRED RESOURCE EXECUTION
     // =============================================================================
 
+    /**
+     * Safely inserts an element into the DOM with validation and fallback
+     * @param {Node} newElement - The element to insert
+     * @param {Node} parent - The preferred parent node
+     * @param {Node} nextSibling - The sibling to insert before (can be null)
+     * @param {Node} fallbackParent - Fallback parent if primary insertion fails
+     * @returns {boolean} - True if insertion succeeded
+     */
+    function safeInsert(newElement, parent, nextSibling, fallbackParent) {
+        try {
+            // Validate the element is a proper Node
+            if (!(newElement instanceof Node)) {
+                console.warn('[SpeedLayer] Invalid node, skipping insertion');
+                return false;
+            }
+
+            if (parent && parent.isConnected) {
+                parent.insertBefore(newElement, nextSibling);
+                return true;
+            }
+        } catch (error) {
+            console.warn('[SpeedLayer] insertBefore failed:', error.message);
+        }
+
+        // Fallback to appending to fallback parent
+        try {
+            if (fallbackParent) {
+                fallbackParent.appendChild(newElement);
+                return true;
+            }
+        } catch (error) {
+            console.error('[SpeedLayer] Failed to insert element:', error);
+            return false;
+        }
+
+        return false;
+    }
+
     function executeQueuedScripts() {
         if (STATE.queuedScripts.length === 0) return;
 
@@ -455,19 +493,21 @@
             const newScript = originalCreateElement ? originalCreateElement.call(document, 'script') : document.createElement('script');
             newScript.src = src;
 
-            Array.from(element.attributes || []).forEach(attr => {
-                if (attr.name !== 'src') {
-                    newScript.setAttribute(attr.name, attr.value);
-                }
-            });
-
-            if (parent && parent.isConnected) {
-                parent.insertBefore(newScript, nextSibling);
-            } else {
-                document.head.appendChild(newScript);
+            try {
+                Array.from(element.attributes || []).forEach(attr => {
+                    if (attr.name !== 'src') {
+                        newScript.setAttribute(attr.name, attr.value);
+                    }
+                });
+            } catch (error) {
+                log('Warning: Could not copy attributes from original element');
             }
 
-            log('✓ Executed deferred script:', src);
+            if (safeInsert(newScript, parent, nextSibling, document.head)) {
+                log('✓ Executed deferred script:', src);
+            } else {
+                log('✗ Failed to execute deferred script:', src);
+            }
         });
 
         STATE.queuedScripts = [];
@@ -504,37 +544,41 @@
                 const newIframe = originalCreateElement ? originalCreateElement.call(document, 'iframe') : document.createElement('iframe');
                 newIframe.src = src;
 
-                Array.from(element.attributes || []).forEach(attr => {
-                    if (attr.name !== 'src') {
-                        newIframe.setAttribute(attr.name, attr.value);
-                    }
-                });
-
-                if (parent && parent.isConnected) {
-                    parent.insertBefore(newIframe, nextSibling);
-                } else {
-                    document.body.appendChild(newIframe);
+                try {
+                    Array.from(element.attributes || []).forEach(attr => {
+                        if (attr.name !== 'src') {
+                            newIframe.setAttribute(attr.name, attr.value);
+                        }
+                    });
+                } catch (error) {
+                    log('Warning: Could not copy attributes from original iframe element');
                 }
 
-                log('✓ Executed delayed iframe:', src);
+                if (safeInsert(newIframe, parent, nextSibling, document.body)) {
+                    log('✓ Executed delayed iframe:', src);
+                } else {
+                    log('✗ Failed to execute delayed iframe:', src);
+                }
             } else {
                 // Use originalCreateElement to bypass Proxy interception
                 const newScript = originalCreateElement ? originalCreateElement.call(document, 'script') : document.createElement('script');
                 newScript.src = src;
 
-                Array.from(element.attributes || []).forEach(attr => {
-                    if (attr.name !== 'src') {
-                        newScript.setAttribute(attr.name, attr.value);
-                    }
-                });
-
-                if (parent && parent.isConnected) {
-                    parent.insertBefore(newScript, nextSibling);
-                } else {
-                    document.head.appendChild(newScript);
+                try {
+                    Array.from(element.attributes || []).forEach(attr => {
+                        if (attr.name !== 'src') {
+                            newScript.setAttribute(attr.name, attr.value);
+                        }
+                    });
+                } catch (error) {
+                    log('Warning: Could not copy attributes from original script element');
                 }
 
-                log('✓ Executed delayed script:', src);
+                if (safeInsert(newScript, parent, nextSibling, document.head)) {
+                    log('✓ Executed delayed script:', src);
+                } else {
+                    log('✗ Failed to execute delayed script:', src);
+                }
             }
         });
 
