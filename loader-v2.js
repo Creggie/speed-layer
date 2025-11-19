@@ -37,7 +37,7 @@
     };
 
     window.__SPEED_LAYER__ = {
-        version: '2.0.1',
+        version: '2.1.0',
         state: STATE,
         config: CONFIG,
         forceLoadAll: forceLoadAll,
@@ -698,10 +698,10 @@
 
     function init() {
         mark('init-start');
-        console.log('[SpeedLayer v2.0.1] Initializing for:', CONFIG.domain);
+        console.log('[SpeedLayer v2.1.0] Initializing for:', CONFIG.domain);
 
         // PHASE 1: Start DOM observer immediately (safe for all sites)
-        // Proxy interception will be started in Phase 2 if enabled in manifest
+        // Proxy interception is now OPT-IN only (disabled by default for maximum compatibility)
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
                 observeScripts();
@@ -711,7 +711,7 @@
             observeScripts();
             mark('dom-observer-early');
         }
-        console.log('[SpeedLayer v2] Phase 1: DOM observer started early');
+        console.log('[SpeedLayer v2] Phase 1: DOM observer started early (Proxy disabled by default)');
 
         // PHASE 2: Load manifest and conditionally start Proxy interception
         loadManifest().then(manifest => {
@@ -742,13 +742,14 @@
                 log('Custom delayed timeout configured:', CONFIG.delayedTimeout + 'ms');
             }
 
-            // Check if we should enable Proxy interception
-            if (manifest.disableInterception) {
-                console.log('[SpeedLayer v2] Phase 2: Proxy interception DISABLED (compatibility mode)');
-                console.log('[SpeedLayer v2] Relying on DOM observer only');
-            } else {
+            // Check if we should enable Proxy interception (OPT-IN only)
+            // Proxy is disabled by default for maximum compatibility
+            if (manifest.enableInterception === true) {
                 interceptScripts();
-                console.log('[SpeedLayer v2] Phase 2: Proxy interception ENABLED');
+                console.log('[SpeedLayer v2] Phase 2: Proxy interception ENABLED (opt-in)');
+            } else {
+                console.log('[SpeedLayer v2] Phase 2: Proxy interception DISABLED (default)');
+                console.log('[SpeedLayer v2] Relying on DOM observer only for maximum compatibility');
             }
 
             mark('manifest-loaded');
