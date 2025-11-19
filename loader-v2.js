@@ -242,15 +242,15 @@
                     get(target, property) {
                         // Return the target itself for special symbol properties
                         if (typeof property === 'symbol') {
-                            return target[property];
+                            return Reflect.get(target, property);
                         }
 
-                        const value = target[property];
+                        const value = Reflect.get(target, property);
 
                         // If it's a function, wrap it to maintain proper context
                         if (typeof value === 'function') {
                             return function(...args) {
-                                return value.apply(target, args);
+                                return Reflect.apply(value, target, args);
                             };
                         }
 
@@ -263,7 +263,7 @@
 
                             if (shouldAllowScript(value)) {
                                 log('✓ Allowing script immediately:', value);
-                                target[property] = value;
+                                Reflect.set(target, property, value);
                                 return true;
                             }
 
@@ -300,8 +300,17 @@
                             }
                         }
 
-                        target[property] = value;
+                        Reflect.set(target, property, value);
                         return true;
+                    },
+                    has(target, property) {
+                        return Reflect.has(target, property);
+                    },
+                    ownKeys(target) {
+                        return Reflect.ownKeys(target);
+                    },
+                    getOwnPropertyDescriptor(target, property) {
+                        return Reflect.getOwnPropertyDescriptor(target, property);
                     }
                 });
 

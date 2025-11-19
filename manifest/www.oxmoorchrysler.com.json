@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "enabled": true,
   "debug": true,
-  "disableInterception": false,
+  "disableInterception": true,
   "idleTimeout": 3000,
   "allowScripts": [
     "dealerinspire.com",
