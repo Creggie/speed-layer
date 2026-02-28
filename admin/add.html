@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Speed Layer — Add Site</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>⚡ Speed Layer</h1>
+  <nav>
+    <a href="index.html">Sites</a>
+    <a href="health.html">Health</a>
+    <a href="add.html" class="active">+ Add Site</a>
+    <a href="/api/docs" target="_blank">API Docs</a>
+  </nav>
+</header>
+
+<div class="container">
+  <h2>Add Site</h2>
+
+  <div id="error" class="error-box" style="display:none"></div>
+
+  <!-- Step indicator -->
+  <div class="step-indicator">
+    <div class="step active" id="step-1-indicator">1 Domain</div>
+    <div class="step" id="step-2-indicator">2 Platform</div>
+    <div class="step" id="step-3-indicator">3 Options</div>
+    <div class="step" id="step-4-indicator">4 Preview</div>
+    <div class="step" id="step-5-indicator">5 Confirm</div>
+  </div>
+
+  <!-- Step 1: Domain -->
+  <div class="card" id="step-1">
+    <div class="form-group">
+      <label for="domain-input">Domain (without www — it will be added automatically)</label>
+      <input type="text" id="domain-input" placeholder="example.com" autocomplete="off" spellcheck="false">
+    </div>
+    <button class="btn btn-primary" onclick="goStep(2)">Next →</button>
+  </div>
+
+  <!-- Step 2: Platform -->
+  <div class="card" id="step-2" style="display:none">
+    <div class="form-group">
+      <label for="platform-select">CMS Platform</label>
+      <select id="platform-select">
+        <option value="DealerInspire">DealerInspire / CDK Global</option>
+        <option value="DealerOn">DealerOn</option>
+        <option value="generic">Generic</option>
+      </select>
+    </div>
+    <button class="btn btn-secondary" onclick="goStep(1)">← Back</button>
+    <button class="btn btn-primary" onclick="goStep(3)">Next →</button>
+  </div>
+
+  <!-- Step 3: Options -->
+  <div class="card" id="step-3" style="display:none">
+    <div class="form-group">
+      <label><input type="checkbox" id="debug-check"> Enable debug logging</label>
+    </div>
+    <div class="form-group">
+      <label><input type="checkbox" id="disable-intercept-check"> Disable Proxy interception (use DOM observer only)</label>
+    </div>
+    <div class="form-group">
+      <label for="pages-mode-select">Pages mode</label>
+      <select id="pages-mode-select">
+        <option value="all">All pages</option>
+        <option value="include">Include (run on selected pages only)</option>
+        <option value="exclude">Exclude (run everywhere except selected pages)</option>
+      </select>
+    </div>
+    <button class="btn btn-secondary" onclick="goStep(2)">← Back</button>
+    <button class="btn btn-primary" onclick="buildPreview()">Next →</button>
+  </div>
+
+  <!-- Step 4: Preview -->
+  <div class="card" id="step-4" style="display:none">
+    <p style="margin-bottom:12px;color:#666">Review the manifest that will be created (both <code id="preview-domain-label"></code> and <code id="preview-www-label"></code>):</p>
+    <div class="form-group">
+      <label>Manifest JSON (editable)</label>
+      <textarea id="preview-editor" rows="24" spellcheck="false"></textarea>
+    </div>
+    <button class="btn btn-secondary" onclick="goStep(3)">← Back</button>
+    <button class="btn btn-primary" onclick="goStep(5)">Confirm & Create →</button>
+  </div>
+
+  <!-- Step 5: Confirm -->
+  <div class="card" id="step-5" style="display:none">
+    <p id="confirm-msg" style="margin-bottom:20px;font-size:15px"></p>
+    <div id="confirm-result"></div>
+    <button class="btn btn-secondary" onclick="goStep(4)" id="back-from-confirm">← Back</button>
+    <button class="btn btn-primary" onclick="create()" id="create-btn">✅ Create</button>
+  </div>
+</div>
+
+<script src="api.js"></script>
+<script>
+  const TEMPLATES = {
+    DealerInspire: {
+      allowScripts: ['dealerinspire.com','di-assets.com','jquery','bootstrap','swiper','font-awesome','animate','di-stacks','di-modal','core.js','main.js','vendor.js'],
+      deferScripts: ['google-analytics.com','googletagmanager.com','gtag','analytics.js','ga.js','facebook.net','fbevents.js','doubleclick.net','adservice','tracking','mouseflow','crazyegg','quantcast','bing.com/clarity','callrail','complyauto.com'],
+      delayedScripts: ['hotjar','gubagoo.io','cdn.gubagoo.io','carcodesms.com','online-shopper','iperceptions.com','datadoghq','extremereach.io'],
+      preconnect: ['https://fonts.googleapis.com','https://fonts.gstatic.com','https://www.google-analytics.com','https://www.googletagmanager.com'],
+    },
+    DealerOn: {
+      allowScripts: ['dealeron.js','dealeron.static','do_utility','cdn.dlron.us','dlron.us','jquery','bootstrap','modernizr','coreBundle','navigation.min.js','ua-parser','userAgent-detection','jquery.validate','dealerOnLeadsBundle','locationSortInjection','formPhoneUtility'],
+      deferScripts: ['googletagmanager.com','gtag','gtm.js','analytics.js','ga.js','dotagging.js','taggbaa.dealeron.com','dealerOnTrack','facebook.net','fbevents.js','doubleclick.net','adservice','tracking','quantcast'],
+      delayedScripts: ['prsnbaa.dealeron.com','personalization.js','banrsaa.dealeron.com','banner.js','priceTrack','carcodesms.com','harmoniq','sincrod.com','hotjar','mouseflow','crazyegg'],
+      preconnect: ['https://cdn.dlron.us','https://taggbaa.dealeron.com','https://prsnbaa.dealeron.com','https://banrsaa.dealeron.com','https://www.googletagmanager.com','https://fonts.googleapis.com','https://fonts.gstatic.com'],
+      disableInterception: true
+    },
+    generic: {
+      allowScripts: ['jquery','bootstrap'],
+      deferScripts: ['googletagmanager.com','gtag','analytics.js','ga.js','facebook.net','fbevents.js','doubleclick.net','tracking'],
+      delayedScripts: ['hotjar','mouseflow','crazyegg','intercom'],
+      preconnect: ['https://www.googletagmanager.com','https://fonts.googleapis.com'],
+    }
+  };
+
+  let domain = '', platform = 'DealerInspire', manifestObj = null;
+
+  function goStep(n) {
+    [1,2,3,4,5].forEach(i => {
+      document.getElementById('step-' + i).style.display = i === n ? '' : 'none';
+      const ind = document.getElementById('step-' + i + '-indicator');
+      ind.classList.remove('active','done');
+      if (i < n) ind.classList.add('done');
+      if (i === n) ind.classList.add('active');
+    });
+    if (n === 5) {
+      const d = document.getElementById('domain-input').value.trim().toLowerCase().replace(/^www\./,'');
+      document.getElementById('confirm-msg').textContent = `This will create manifest/${d}.json and manifest/www.${d}.json`;
+    }
+  }
+
+  function buildPreview() {
+    domain = document.getElementById('domain-input').value.trim().toLowerCase().replace(/^www\./,'');
+    if (!domain) { showError('Please enter a domain'); goStep(1); return; }
+
+    platform = document.getElementById('platform-select').value;
+    const debug = document.getElementById('debug-check').checked;
+    const disableInterception = document.getElementById('disable-intercept-check').checked || !!TEMPLATES[platform].disableInterception;
+    const pagesMode = document.getElementById('pages-mode-select').value;
+    const tmpl = TEMPLATES[platform] || {};
+
+    manifestObj = {
+      domain,
+      version: '1.0.0',
+      platform,
+      enabled: true,
+      debug,
+      disableInterception,
+      idleTimeout: 3000,
+      delayedTimeout: 10000,
+      ...(pagesMode !== 'all' ? { pages: { mode: pagesMode, patterns: [] } } : {}),
+      allowScripts: tmpl.allowScripts || [],
+      deferScripts: tmpl.deferScripts || [],
+      delayedScripts: tmpl.delayedScripts || [],
+      preconnect: tmpl.preconnect || [],
+      preload: [],
+      criticalCssInline: ''
+    };
+
+    document.getElementById('preview-domain-label').textContent = domain + '.json';
+    document.getElementById('preview-www-label').textContent = 'www.' + domain + '.json';
+    document.getElementById('preview-editor').value = JSON.stringify(manifestObj, null, 2);
+    goStep(4);
+  }
+
+  async function create() {
+    clearError();
+    let parsed;
+    try { parsed = JSON.parse(document.getElementById('preview-editor').value); }
+    catch (e) { return showError('JSON syntax error: ' + e.message); }
+
+    document.getElementById('create-btn').disabled = true;
+    document.getElementById('create-btn').textContent = '⏳ Creating...';
+    document.getElementById('back-from-confirm').disabled = true;
+
+    try {
+      await api.createSite(parsed);
+      const wwwManifest = { ...parsed, domain: 'www.' + parsed.domain };
+      await api.createSite(wwwManifest);
+      document.getElementById('confirm-result').innerHTML = `<div class="success-box">✅ Created ${parsed.domain}.json and www.${parsed.domain}.json<br><a href="index.html" style="color:inherit;font-weight:600">← Return to Sites</a></div>`;
+      document.getElementById('create-btn').style.display = 'none';
+      document.getElementById('back-from-confirm').style.display = 'none';
+    } catch (e) {
+      document.getElementById('create-btn').disabled = false;
+      document.getElementById('create-btn').textContent = '✅ Create';
+      document.getElementById('back-from-confirm').disabled = false;
+      showError(e.message);
+    }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+  function clearError() {
+    document.getElementById('error').style.display = 'none';
+  }
+</script>
+</body>
+</html>

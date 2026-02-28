@@ -1,0 +1,233 @@
+openapi: 3.0.3
+info:
+  title: Speed Layer API
+  description: REST API for managing Speed Layer site manifests and monitoring health
+  version: 1.0.0
+
+servers:
+  - url: /api
+
+paths:
+  /sites:
+    get:
+      summary: List all sites
+      description: Returns a summary of all site manifests
+      responses:
+        '200':
+          description: Array of site summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SiteSummary'
+    post:
+      summary: Create a new site manifest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Manifest'
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Schema validation failed
+        '409':
+          description: Site already exists
+
+  /sites/{domain}:
+    parameters:
+      - in: path
+        name: domain
+        required: true
+        schema:
+          type: string
+        example: www.example.com
+    get:
+      summary: Get a site manifest
+      responses:
+        '200':
+          description: Full manifest
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Manifest'
+        '404':
+          description: Not found
+    put:
+      summary: Replace a site manifest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Manifest'
+      responses:
+        '200':
+          description: Updated
+        '400':
+          description: Validation failed
+        '404':
+          description: Not found
+    delete:
+      summary: Delete a site manifest
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          description: Not found
+
+  /sites/{domain}/enable:
+    post:
+      summary: Enable a site
+      parameters:
+        - in: path
+          name: domain
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Enabled
+        '404':
+          description: Not found
+
+  /sites/{domain}/disable:
+    post:
+      summary: Disable a site
+      parameters:
+        - in: path
+          name: domain
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Disabled
+        '404':
+          description: Not found
+
+  /health:
+    get:
+      summary: CDN reachability for all sites
+      description: Fetches each manifest from jsDelivr CDN and reports latency and validity
+      responses:
+        '200':
+          description: Health results per site
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HealthResult'
+
+  /telemetry:
+    post:
+      summary: Receive a telemetry beacon from a loader
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TelemetryEvent'
+      responses:
+        '204':
+          description: Accepted
+    get:
+      summary: Retrieve recent telemetry events
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          description: Ring buffer of recent events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TelemetryEvent'
+
+components:
+  schemas:
+    SiteSummary:
+      type: object
+      properties:
+        domain:
+          type: string
+        platform:
+          type: string
+          nullable: true
+        enabled:
+          type: boolean
+        pagesMode:
+          type: string
+
+    Manifest:
+      type: object
+      required: [domain, enabled, allowScripts, deferScripts, delayedScripts]
+      properties:
+        domain:
+          type: string
+        enabled:
+          type: boolean
+        platform:
+          type: string
+          enum: [DealerInspire, DealerOn, generic]
+        allowScripts:
+          type: array
+          items:
+            type: string
+        deferScripts:
+          type: array
+          items:
+            type: string
+        delayedScripts:
+          type: array
+          items:
+            type: string
+
+    HealthResult:
+      type: object
+      properties:
+        domain:
+          type: string
+        cdnUrl:
+          type: string
+        status:
+          type: string
+          enum: [ok, error, timeout]
+        latencyMs:
+          type: integer
+          nullable: true
+        valid:
+          type: boolean
+          nullable: true
+        error:
+          type: string
+          nullable: true
+
+    TelemetryEvent:
+      type: object
+      properties:
+        event:
+          type: string
+        domain:
+          type: string
+        timestamp:
+          type: integer
+        loaderVersion:
+          type: string
+        errorType:
+          type: string
+        url:
+          type: string
+        attempt:
+          type: integer
+        httpStatus:
+          type: integer

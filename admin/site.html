@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Speed Layer — Edit Site</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>⚡ Speed Layer</h1>
+  <nav>
+    <a href="index.html">Sites</a>
+    <a href="health.html">Health</a>
+    <a href="add.html">+ Add Site</a>
+    <a href="/api/docs" target="_blank">API Docs</a>
+  </nav>
+</header>
+
+<div class="container">
+  <div style="margin-bottom:16px"><a href="index.html" style="color:#666;text-decoration:none">← Back to Sites</a></div>
+  <h2 id="page-title">Edit Site</h2>
+
+  <div id="error" class="error-box" style="display:none"></div>
+  <div id="success" class="success-box" style="display:none"></div>
+
+  <div class="card">
+    <div class="form-group">
+      <label>JSON Manifest</label>
+      <textarea id="json-editor" rows="28" spellcheck="false"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="save()">💾 Save</button>
+      <button class="btn btn-secondary" onclick="validateOnly()">✔ Validate</button>
+      <button id="toggle-btn" class="btn btn-secondary" onclick="toggle()"></button>
+      <button class="btn btn-danger" onclick="confirmDelete()" style="margin-left:auto">🗑 Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="api.js"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  const domain = params.get('domain');
+  let currentManifest = null;
+
+  if (!domain) { location.href = 'index.html'; }
+
+  document.getElementById('page-title').textContent = 'Edit: ' + domain;
+  document.title = 'Edit ' + domain + ' — Speed Layer';
+
+  async function load() {
+    try {
+      currentManifest = await api.getSite(domain);
+      document.getElementById('json-editor').value = JSON.stringify(currentManifest, null, 2);
+      updateToggleBtn();
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
+  function updateToggleBtn() {
+    const btn = document.getElementById('toggle-btn');
+    if (!currentManifest) return;
+    btn.textContent = currentManifest.enabled ? '⛔ Disable' : '✅ Enable';
+  }
+
+  async function save() {
+    clearMessages();
+    let parsed;
+    try {
+      parsed = JSON.parse(document.getElementById('json-editor').value);
+    } catch (e) {
+      return showError('JSON syntax error: ' + e.message);
+    }
+    try {
+      await api.updateSite(domain, parsed);
+      currentManifest = parsed;
+      updateToggleBtn();
+      showSuccess('Saved successfully');
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
+  async function validateOnly() {
+    clearMessages();
+    let parsed;
+    try {
+      parsed = JSON.parse(document.getElementById('json-editor').value);
+    } catch (e) {
+      return showError('JSON syntax error: ' + e.message);
+    }
+    // Use PUT and check — or just parse success
+    showSuccess('JSON is valid syntax. Save to also run schema validation.');
+  }
+
+  async function toggle() {
+    clearMessages();
+    try {
+      if (currentManifest.enabled) {
+        await api.disableSite(domain);
+        currentManifest.enabled = false;
+      } else {
+        await api.enableSite(domain);
+        currentManifest.enabled = true;
+      }
+      document.getElementById('json-editor').value = JSON.stringify(currentManifest, null, 2);
+      updateToggleBtn();
+      showSuccess(currentManifest.enabled ? 'Site enabled' : 'Site disabled');
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
+  async function confirmDelete() {
+    if (!confirm(`Delete manifest for ${domain}? This cannot be undone.`)) return;
+    try {
+      await api.deleteSite(domain);
+      location.href = 'index.html';
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
+  function showError(msg) {
+    document.getElementById('error').textContent = msg;
+    document.getElementById('error').style.display = 'block';
+    document.getElementById('success').style.display = 'none';
+  }
+  function showSuccess(msg) {
+    document.getElementById('success').textContent = msg;
+    document.getElementById('success').style.display = 'block';
+    document.getElementById('error').style.display = 'none';
+  }
+  function clearMessages() {
+    document.getElementById('error').style.display = 'none';
+    document.getElementById('success').style.display = 'none';
+  }
+
+  load();
+</script>
+</body>
+</html>

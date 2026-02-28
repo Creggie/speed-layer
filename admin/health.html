@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Speed Layer — Health</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>⚡ Speed Layer</h1>
+  <nav>
+    <a href="index.html">Sites</a>
+    <a href="health.html" class="active">Health</a>
+    <a href="add.html">+ Add Site</a>
+    <a href="/api/docs" target="_blank">API Docs</a>
+  </nav>
+</header>
+
+<div class="container">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <h2>CDN Health</h2>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span id="last-check" style="color:#888;font-size:13px"></span>
+      <button class="btn btn-secondary" onclick="load()">↻ Refresh</button>
+      <label style="font-size:13px;color:#666"><input type="checkbox" id="auto-refresh" onchange="toggleAutoRefresh()"> Auto-refresh (30s)</label>
+    </div>
+  </div>
+
+  <div id="error" class="error-box" style="display:none"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Domain</th>
+        <th>Status</th>
+        <th>Latency</th>
+        <th>Schema Valid</th>
+        <th>CDN URL</th>
+      </tr>
+    </thead>
+    <tbody id="health-body">
+      <tr><td colspan="5" style="text-align:center;padding:24px;color:#999"><span class="spinner"></span> Checking CDN...</td></tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top:28px">
+    <h2 style="margin-bottom:16px">Recent Telemetry Events</h2>
+    <table>
+      <thead>
+        <tr><th>Time</th><th>Event</th><th>Domain</th><th>Error Type</th><th>Attempt</th><th>Loader</th></tr>
+      </thead>
+      <tbody id="telemetry-body">
+        <tr><td colspan="6" style="text-align:center;padding:16px;color:#999">No events</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script src="api.js"></script>
+<script>
+  let autoInterval = null;
+
+  function toggleAutoRefresh() {
+    const checked = document.getElementById('auto-refresh').checked;
+    if (checked) {
+      autoInterval = setInterval(load, 30000);
+    } else {
+      clearInterval(autoInterval);
+      autoInterval = null;
+    }
+  }
+
+  async function load() {
+    document.getElementById('error').style.display = 'none';
+    document.getElementById('health-body').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:16px;color:#999"><span class="spinner"></span> Checking CDN...</td></tr>';
+
+    try {
+      const [results, events] = await Promise.all([api.health(), api.getTelemetry(50)]);
+
+      const tbody = document.getElementById('health-body');
+      tbody.innerHTML = results.map(r => {
+        const statusClass = r.status === 'ok' ? 'status-ok' : r.status === 'timeout' ? 'status-timeout' : 'status-error';
+        const statusIcon = r.status === 'ok' ? '✅' : r.status === 'timeout' ? '⏱' : '❌';
+        const validIcon = r.valid === true ? '✅' : r.valid === false ? '❌' : '—';
+        const latency = r.latencyMs != null ? `<span class="latency">${r.latencyMs}ms</span>` : '—';
+        const errNote = r.error ? `<br><small style="color:#b91c1c">${r.error}</small>` : '';
+        return `<tr>
+          <td>${r.domain}</td>
+          <td class="${statusClass}">${statusIcon} ${r.status}${errNote}</td>
+          <td>${latency}</td>
+          <td>${validIcon}</td>
+          <td><a href="${r.cdnUrl}" target="_blank" style="font-size:11px;color:#4f46e5;word-break:break-all">${r.cdnUrl}</a></td>
+        </tr>`;
+      }).join('');
+
+      const tel = document.getElementById('telemetry-body');
+      if (!events.length) {
+        tel.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:16px;color:#999">No telemetry events received</td></tr>';
+      } else {
+        tel.innerHTML = [...events].reverse().map(e => {
+          const t = e.timestamp ? new Date(e.timestamp).toLocaleTimeString() : '—';
+          return `<tr>
+            <td>${t}</td>
+            <td>${e.event || '—'}</td>
+            <td>${e.domain || '—'}</td>
+            <td>${e.errorType || '—'}</td>
+            <td>${e.attempt || '—'}</td>
+            <td style="font-size:11px">${e.loaderVersion || '—'}</td>
+          </tr>`;
+        }).join('');
+      }
+
+      document.getElementById('last-check').textContent = 'Last checked: ' + new Date().toLocaleTimeString();
+    } catch (e) {
+      document.getElementById('error').textContent = e.message;
+      document.getElementById('error').style.display = 'block';
+      document.getElementById('health-body').innerHTML = '';
+    }
+  }
+
+  load();
+</script>
+</body>
+</html>

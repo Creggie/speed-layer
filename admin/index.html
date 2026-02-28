@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Speed Layer Admin</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>⚡ Speed Layer</h1>
+  <nav>
+    <a href="index.html" class="active">Sites</a>
+    <a href="health.html">Health</a>
+    <a href="add.html">+ Add Site</a>
+    <a href="/api/docs" target="_blank">API Docs</a>
+  </nav>
+</header>
+
+<div class="container">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+    <h2>Sites</h2>
+    <a href="add.html" class="btn btn-primary">+ Add Site</a>
+  </div>
+
+  <div id="error" class="error-box" style="display:none"></div>
+
+  <table id="sites-table">
+    <thead>
+      <tr>
+        <th>Domain</th>
+        <th>Platform</th>
+        <th>Enabled</th>
+        <th>Pages</th>
+        <th class="actions">Actions</th>
+      </tr>
+    </thead>
+    <tbody id="sites-body">
+      <tr><td colspan="5" style="text-align:center;padding:24px;color:#999"><span class="spinner"></span> Loading...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script src="api.js"></script>
+<script>
+  const platformClass = { DealerInspire: 'badge-di', DealerOn: 'badge-do', generic: 'badge-generic' };
+
+  async function load() {
+    try {
+      const sites = await api.listSites();
+      const tbody = document.getElementById('sites-body');
+      if (!sites.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:#999">No sites configured</td></tr>';
+        return;
+      }
+      tbody.innerHTML = sites.map(s => `
+        <tr>
+          <td><a href="site.html?domain=${encodeURIComponent(s.domain)}">${s.domain}</a></td>
+          <td>${s.platform ? `<span class="badge ${platformClass[s.platform] || 'badge-generic'}">${s.platform}</span>` : '<span style="color:#aaa">—</span>'}</td>
+          <td>
+            <button class="toggle-btn" data-domain="${s.domain}" data-enabled="${s.enabled}" title="${s.enabled ? 'Click to disable' : 'Click to enable'}">
+              ${s.enabled ? '✅' : '⛔'}
+            </button>
+          </td>
+          <td>${s.pagesMode || 'all'}</td>
+          <td class="actions">
+            <a href="site.html?domain=${encodeURIComponent(s.domain)}" class="btn btn-secondary" style="font-size:12px">Edit</a>
+          </td>
+        </tr>
+      `).join('');
+
+      tbody.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const domain = btn.dataset.domain;
+          const enabled = btn.dataset.enabled === 'true';
+          btn.textContent = '⏳';
+          try {
+            enabled ? await api.disableSite(domain) : await api.enableSite(domain);
+            load();
+          } catch (e) {
+            showError(e.message);
+          }
+        });
+      });
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  load();
+</script>
+</body>
+</html>
