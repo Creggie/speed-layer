@@ -1,5 +1,5 @@
 {
-  "domain": "oxmoorchrysler.com",
+  "domain": "www.toyotaofscranton.com",
   "version": "1.0.0",
   "enabled": true,
   "debug": true,
@@ -17,7 +17,7 @@
     "di-modal",
     "core.js",
     "main.js",
-    "vendor.js",
+    "vendor.js"
   ],
   "deferScripts": [
     "google-analytics.com",
