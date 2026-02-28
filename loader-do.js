@@ -1,14 +1,19 @@
 /**
- * Speed Layer Loader - DealerOn Edition (v1.0.0)
+ * Speed Layer Loader - DealerOn Edition (v1.1.0)
  *
  * Optimized specifically for DealerOn CMS platform
- * Based on Speed Layer v2.0 architecture
+ * Based on Speed Layer v2.2.0 architecture
  *
  * Key DealerOn Optimizations:
  * - Compatible with ComplyAuto blocker.js (Proxy conflict mitigation)
  * - Handles DealerOn's extensive GTM container implementations
  * - Optimized for DealerOn lazy loading patterns
  * - Supports DealerOn personalization and banner systems
+ *
+ * Reliability (v1.1.0):
+ * - fetchWithTimeout + classifyFetchError + retry (3x exponential backoff)
+ * - Compiled regex cache via _regexCache Map
+ * - Telemetry via navigator.sendBeacon (data-telemetry attr or manifest config)
  *
  * Platform: DealerOn CMS
  * CMS URL: https://www.dealeron.com/
@@ -87,6 +92,20 @@
         }
     }
 
+    // Compiled regex cache — each pattern is compiled once on first use
+    const _regexCache = new Map();
+
+    function getRegex(pattern) {
+        if (!_regexCache.has(pattern)) {
+            try {
+                _regexCache.set(pattern, new RegExp(pattern.slice(1, -1)));
+            } catch (e) {
+                _regexCache.set(pattern, null);
+            }
+        }
+        return _regexCache.get(pattern);
+    }
+
     function matchesPattern(url, patterns) {
         if (!url || !patterns || !patterns.length) return false;
 
@@ -94,12 +113,8 @@
             if (url.includes(pattern)) return true;
 
             if (pattern.startsWith('/') && pattern.endsWith('/')) {
-                try {
-                    const regex = new RegExp(pattern.slice(1, -1));
-                    return regex.test(url);
-                } catch (e) {
-                    return false;
-                }
+                const regex = getRegex(pattern);
+                return regex ? regex.test(url) : false;
             }
 
             return false;
@@ -200,8 +215,47 @@
     }
 
     // =============================================================================
-    // MANIFEST LOADING
+    // TELEMETRY
     // =============================================================================
+
+    function sendTelemetry(event, extra) {
+        var endpoint = (CONFIG.scriptTag && CONFIG.scriptTag.getAttribute('data-telemetry')) ||
+            (STATE.manifest && STATE.manifest.telemetry && STATE.manifest.telemetry.endpoint) || null;
+        if (!endpoint) return;
+
+        var sampleRate = (STATE.manifest && STATE.manifest.telemetry && STATE.manifest.telemetry.sampleRate);
+        if (sampleRate !== undefined && Math.random() > sampleRate) return;
+
+        var payload = JSON.stringify(Object.assign({
+            event: event,
+            domain: CONFIG.domain,
+            timestamp: Date.now(),
+            loaderVersion: '1.1.0-dealeron'
+        }, extra || {}));
+
+        if (navigator.sendBeacon) {
+            navigator.sendBeacon(endpoint, new Blob([payload], { type: 'application/json' }));
+        }
+    }
+
+    // =============================================================================
+    // MANIFEST LOADING — with timeout, error classification, and retry
+    // =============================================================================
+
+    function fetchWithTimeout(url, ms) {
+        var controller = new AbortController();
+        var id = setTimeout(function () { controller.abort(); }, ms);
+        return fetch(url, { signal: controller.signal })
+            .finally(function () { clearTimeout(id); });
+    }
+
+    function classifyFetchError(err, status) {
+        if (err && err.name === 'AbortError') return 'TIMEOUT';
+        if (status === 404) return 'NOT_FOUND';
+        if (status >= 500) return 'SERVER_ERROR';
+        if (err instanceof SyntaxError) return 'JSON_PARSE_ERROR';
+        return 'NETWORK_ERROR';
+    }
 
     function loadManifest() {
         const manifestAttr = CONFIG.scriptTag.getAttribute('data-manifest');
@@ -217,32 +271,66 @@
 
         log('Loading manifest from:', CONFIG.manifestUrl);
 
-        return fetch(CONFIG.manifestUrl)
-            .then(response => {
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                return response.json();
-            })
-            .then(manifest => {
-                STATE.manifest = manifest;
-                STATE.manifestLoaded = true;
-                log('Manifest loaded successfully', manifest);
-                return manifest;
-            })
-            .catch(error => {
-                console.warn('[SpeedLayer-DO] Failed to load manifest:', error.message);
-                // DealerOn-specific safe fallback
-                STATE.manifest = {
-                    allowScripts: ['dealeron.js', 'dlron.us', 'jquery', 'bootstrap'],
-                    deferScripts: ['analytics', 'tracking', 'gtag', 'gtm', 'googletagmanager', 'facebook', 'doubleclick'],
-                    delayedScripts: ['carcodesms', 'harmoniq', 'sincrod', 'personalization'],
-                    preconnect: [],
-                    preload: [],
-                    debug: false,
-                    disableInterception: true // Safe default for DealerOn (ComplyAuto compatibility)
-                };
-                STATE.manifestLoaded = true;
-                return STATE.manifest;
-            });
+        var maxAttempts = 3;
+        var timeoutMs = 5000;
+        var attempt = 0;
+
+        function tryFetch() {
+            attempt++;
+            var httpStatus = null;
+            return fetchWithTimeout(CONFIG.manifestUrl, timeoutMs)
+                .then(function (response) {
+                    httpStatus = response.status;
+                    if (!response.ok) {
+                        var err = new Error('HTTP ' + response.status);
+                        err._httpStatus = response.status;
+                        throw err;
+                    }
+                    return response.json();
+                })
+                .then(function (manifest) {
+                    STATE.manifest = manifest;
+                    STATE.manifestLoaded = true;
+                    log('Manifest loaded successfully', manifest);
+                    return manifest;
+                })
+                .catch(function (err) {
+                    var status = err._httpStatus || httpStatus;
+                    var errorType = classifyFetchError(err, status);
+                    var noRetry = (errorType === 'NOT_FOUND' || errorType === 'JSON_PARSE_ERROR');
+
+                    if (!noRetry && attempt < maxAttempts) {
+                        var backoff = Math.pow(2, attempt - 1) * 1000;
+                        log('[SpeedLayer-DO] Manifest fetch ' + errorType + ', retry ' + attempt + '/' + maxAttempts + ' in ' + backoff + 'ms');
+                        return new Promise(function (resolve) {
+                            setTimeout(function () { resolve(tryFetch()); }, backoff);
+                        });
+                    }
+
+                    console.warn('[SpeedLayer-DO] Failed to load manifest:', err.message);
+                    sendTelemetry('manifest_error', {
+                        errorType: errorType,
+                        url: CONFIG.manifestUrl,
+                        attempt: attempt,
+                        httpStatus: status
+                    });
+
+                    // DealerOn-specific safe fallback
+                    STATE.manifest = {
+                        allowScripts: ['dealeron.js', 'dlron.us', 'jquery', 'bootstrap'],
+                        deferScripts: ['analytics', 'tracking', 'gtag', 'gtm', 'googletagmanager', 'facebook', 'doubleclick'],
+                        delayedScripts: ['carcodesms', 'harmoniq', 'sincrod', 'personalization'],
+                        preconnect: [],
+                        preload: [],
+                        debug: false,
+                        disableInterception: true // Safe default for DealerOn (ComplyAuto compatibility)
+                    };
+                    STATE.manifestLoaded = true;
+                    return STATE.manifest;
+                });
+        }
+
+        return tryFetch();
     }
 
     // =============================================================================

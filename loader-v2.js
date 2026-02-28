@@ -1,7 +1,9 @@
 /**
- * Speed Layer Loader v2.0 - Enhanced Edition
+ * Speed Layer Loader v2.2.0 - Enhanced Edition
  * Optimized for maximum PageSpeed Insights improvements
- * Additional features: Font optimization, preload management, early hints
+ * Additional features: Font optimization, preload management, early hints,
+ *   fetchWithTimeout + classifyFetchError + retry (3x exponential backoff),
+ *   compiled regex cache, telemetry via navigator.sendBeacon
  */
 
 (function () {
@@ -37,7 +39,7 @@
     };
 
     window.__SPEED_LAYER__ = {
-        version: '2.1.0',
+        version: '2.2.0',
         state: STATE,
         config: CONFIG,
         forceLoadAll: forceLoadAll,
@@ -75,6 +77,20 @@
         }
     }
 
+    // Compiled regex cache — each pattern is compiled once on first use
+    const _regexCache = new Map();
+
+    function getRegex(pattern) {
+        if (!_regexCache.has(pattern)) {
+            try {
+                _regexCache.set(pattern, new RegExp(pattern.slice(1, -1)));
+            } catch (e) {
+                _regexCache.set(pattern, null);
+            }
+        }
+        return _regexCache.get(pattern);
+    }
+
     function matchesPattern(url, patterns) {
         if (!url || !patterns || !patterns.length) return false;
 
@@ -82,12 +98,8 @@
             if (url.includes(pattern)) return true;
 
             if (pattern.startsWith('/') && pattern.endsWith('/')) {
-                try {
-                    const regex = new RegExp(pattern.slice(1, -1));
-                    return regex.test(url);
-                } catch (e) {
-                    return false;
-                }
+                const regex = getRegex(pattern);
+                return regex ? regex.test(url) : false;
             }
 
             return false;
@@ -113,11 +125,52 @@
     }
 
     // =============================================================================
-    // MANIFEST LOADING
+    // TELEMETRY
     // =============================================================================
 
+    function sendTelemetry(event, extra) {
+        // Determine endpoint: data-telemetry attribute (pre-manifest) or manifest config (post-manifest)
+        var endpoint = (CONFIG.scriptTag && CONFIG.scriptTag.getAttribute('data-telemetry')) ||
+            (STATE.manifest && STATE.manifest.telemetry && STATE.manifest.telemetry.endpoint) || null;
+        if (!endpoint) return;
+
+        // Sample rate check (post-manifest only)
+        var sampleRate = (STATE.manifest && STATE.manifest.telemetry && STATE.manifest.telemetry.sampleRate);
+        if (sampleRate !== undefined && Math.random() > sampleRate) return;
+
+        var payload = JSON.stringify(Object.assign({
+            event: event,
+            domain: CONFIG.domain,
+            timestamp: Date.now(),
+            loaderVersion: '2.1.0'
+        }, extra || {}));
+
+        if (navigator.sendBeacon) {
+            navigator.sendBeacon(endpoint, new Blob([payload], { type: 'application/json' }));
+        }
+    }
+
+    // =============================================================================
+    // MANIFEST LOADING — with timeout, error classification, and retry
+    // =============================================================================
+
+    function fetchWithTimeout(url, ms) {
+        var controller = new AbortController();
+        var id = setTimeout(function () { controller.abort(); }, ms);
+        return fetch(url, { signal: controller.signal })
+            .finally(function () { clearTimeout(id); });
+    }
+
+    function classifyFetchError(err, status) {
+        if (err && err.name === 'AbortError') return 'TIMEOUT';
+        if (status === 404) return 'NOT_FOUND';
+        if (status >= 500) return 'SERVER_ERROR';
+        if (err instanceof SyntaxError) return 'JSON_PARSE_ERROR';
+        return 'NETWORK_ERROR';
+    }
+
     function loadManifest() {
-        const manifestAttr = CONFIG.scriptTag.getAttribute('data-manifest');
+        var manifestAttr = CONFIG.scriptTag.getAttribute('data-manifest');
 
         if (!manifestAttr) {
             console.error('[SpeedLayer] No data-manifest attribute found');
@@ -125,34 +178,70 @@
         }
 
         CONFIG.manifestUrl = manifestAttr.endsWith('/')
-            ? `${manifestAttr}${CONFIG.domain}.json`
-            : `${manifestAttr}/${CONFIG.domain}.json`;
+            ? manifestAttr + CONFIG.domain + '.json'
+            : manifestAttr + '/' + CONFIG.domain + '.json';
 
         log('Loading manifest from:', CONFIG.manifestUrl);
 
-        return fetch(CONFIG.manifestUrl)
-            .then(response => {
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                return response.json();
-            })
-            .then(manifest => {
-                STATE.manifest = manifest;
-                STATE.manifestLoaded = true;
-                log('Manifest loaded successfully', manifest);
-                return manifest;
-            })
-            .catch(error => {
-                console.warn('[SpeedLayer] Failed to load manifest:', error.message);
-                STATE.manifest = {
-                    allowScripts: [],
-                    deferScripts: ['analytics', 'tracking', 'gtag', 'facebook', 'doubleclick', 'googlesyndication'],
-                    preconnect: [],
-                    preload: [],
-                    debug: false
-                };
-                STATE.manifestLoaded = true;
-                return STATE.manifest;
-            });
+        var maxAttempts = 3;
+        var timeoutMs = 5000;
+        var attempt = 0;
+
+        function tryFetch() {
+            attempt++;
+            var httpStatus = null;
+            return fetchWithTimeout(CONFIG.manifestUrl, timeoutMs)
+                .then(function (response) {
+                    httpStatus = response.status;
+                    if (!response.ok) {
+                        var err = new Error('HTTP ' + response.status);
+                        err._httpStatus = response.status;
+                        throw err;
+                    }
+                    return response.json();
+                })
+                .then(function (manifest) {
+                    STATE.manifest = manifest;
+                    STATE.manifestLoaded = true;
+                    log('Manifest loaded successfully', manifest);
+                    return manifest;
+                })
+                .catch(function (err) {
+                    var status = err._httpStatus || httpStatus;
+                    var errorType = classifyFetchError(err, status);
+                    var noRetry = (errorType === 'NOT_FOUND' || errorType === 'JSON_PARSE_ERROR');
+
+                    if (!noRetry && attempt < maxAttempts) {
+                        var backoff = Math.pow(2, attempt - 1) * 1000;
+                        log('[SpeedLayer] Manifest fetch ' + errorType + ', retry ' + attempt + '/' + maxAttempts + ' in ' + backoff + 'ms');
+                        return new Promise(function (resolve) {
+                            setTimeout(function () { resolve(tryFetch()); }, backoff);
+                        });
+                    }
+
+                    // All retries exhausted (or no-retry error)
+                    console.warn('[SpeedLayer] Failed to load manifest:', err.message);
+                    sendTelemetry('manifest_error', {
+                        errorType: errorType,
+                        url: CONFIG.manifestUrl,
+                        attempt: attempt,
+                        httpStatus: status
+                    });
+
+                    STATE.manifest = {
+                        allowScripts: [],
+                        deferScripts: ['analytics', 'tracking', 'gtag', 'facebook', 'doubleclick', 'googlesyndication'],
+                        delayedScripts: [],
+                        preconnect: [],
+                        preload: [],
+                        debug: false
+                    };
+                    STATE.manifestLoaded = true;
+                    return STATE.manifest;
+                });
+        }
+
+        return tryFetch();
     }
 
     // =============================================================================
@@ -698,7 +787,7 @@
 
     function init() {
         mark('init-start');
-        console.log('[SpeedLayer v2.1.0] Initializing for:', CONFIG.domain);
+        console.log('[SpeedLayer v2.2.0] Initializing for:', CONFIG.domain);
 
         // PHASE 1: Start DOM observer immediately (safe for all sites)
         // Proxy interception is now OPT-IN only (disabled by default for maximum compatibility)
