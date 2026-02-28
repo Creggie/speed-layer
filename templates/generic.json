@@ -1,0 +1,30 @@
+{
+  "_comment": "Generic platform template — minimal starting point for non-DealerOn/DI sites",
+  "allowScripts": [
+    "jquery",
+    "bootstrap"
+  ],
+  "deferScripts": [
+    "googletagmanager.com",
+    "gtag",
+    "analytics.js",
+    "ga.js",
+    "facebook.net",
+    "fbevents.js",
+    "doubleclick.net",
+    "tracking"
+  ],
+  "delayedScripts": [
+    "hotjar",
+    "mouseflow",
+    "crazyegg",
+    "intercom"
+  ],
+  "preconnect": [
+    "https://www.googletagmanager.com",
+    "https://fonts.googleapis.com"
+  ],
+  "preload": [],
+  "criticalCssInline": "",
+  "disableInterception": false
+}

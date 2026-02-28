@@ -18,7 +18,7 @@
     "core.js",
     "main.js",
     "vendor.js",
-    "cdn.autofi.com",
+    "cdn.autofi.com"
   ],
   "deferScripts": [
     "google-analytics.com",

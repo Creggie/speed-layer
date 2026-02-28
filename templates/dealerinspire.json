@@ -1,10 +1,5 @@
 {
-  "domain": "www.toyotaofstroudsburg.com",
-  "version": "1.0.0",
-  "enabled": true,
-  "debug": true,
-  "disableInterception": false,
-  "idleTimeout": 3000,
+  "_comment": "DealerInspire/CDK Global platform template — pre-filled for typical DI deployments",
   "allowScripts": [
     "dealerinspire.com",
     "di-assets.com",
@@ -38,17 +33,12 @@
     "complyauto.com"
   ],
   "delayedScripts": [
-    "api.mapbox.com",
-    "cdn.revolutionparts.com",
     "hotjar",
-    "online-shopper",
-    "cdn.gubagoo.io",
     "gubagoo.io",
-    "sd.iperceptions.com",
+    "cdn.gubagoo.io",
+    "carcodesms.com",
+    "online-shopper",
     "iperceptions.com",
-    "ver.ev5.ai",
-    "datadoghq-browser-agent.com",
-    "datadog",
     "datadoghq",
     "extremereach.io"
   ],
@@ -60,10 +50,5 @@
   ],
   "preload": [],
   "criticalCssInline": "",
-  "notes": {
-    "allowScripts": "All DealerInspire scripts load immediately for full functionality",
-    "deferScripts": "Only analytics and tracking scripts are deferred to 3 seconds",
-    "delayedScripts": "Empty - no chat widget to delay",
-    "purpose": "Conservative configuration to test Speed Layer without complications"
-  }
+  "disableInterception": false
 }

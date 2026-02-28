@@ -1,0 +1,155 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Speed Layer Manifest",
+  "description": "Per-domain configuration for the Speed Layer script management system",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["domain", "enabled", "allowScripts", "deferScripts", "delayedScripts"],
+  "properties": {
+    "domain": {
+      "type": "string",
+      "description": "The hostname this manifest applies to (e.g. www.example.com)",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "description": "Manifest version string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "platform": {
+      "type": "string",
+      "description": "CMS platform this site runs on",
+      "enum": ["DealerInspire", "DealerOn", "generic"]
+    },
+    "enabled": {
+      "type": "boolean",
+      "description": "Master on/off switch for Speed Layer on this domain"
+    },
+    "debug": {
+      "type": "boolean",
+      "description": "Enable verbose console logging",
+      "default": false
+    },
+    "disableInterception": {
+      "type": "boolean",
+      "description": "Disable Proxy interception, rely on DOM observer only",
+      "default": false
+    },
+    "enableInterception": {
+      "type": "boolean",
+      "description": "Explicitly enable Proxy interception (loader-v2.js, off by default)",
+      "default": false
+    },
+    "idleTimeout": {
+      "type": "number",
+      "description": "Milliseconds before deferred scripts are released",
+      "minimum": 0,
+      "default": 3000
+    },
+    "delayedTimeout": {
+      "type": "number",
+      "description": "Milliseconds before delayed scripts are released",
+      "minimum": 0,
+      "default": 10000
+    },
+    "manifestTimeout": {
+      "type": "number",
+      "description": "Milliseconds before manifest fetch is aborted",
+      "minimum": 500,
+      "default": 5000
+    },
+    "manifestRetries": {
+      "type": "number",
+      "description": "Number of manifest fetch retry attempts",
+      "minimum": 0,
+      "maximum": 5,
+      "default": 3
+    },
+    "pages": {
+      "type": "object",
+      "description": "Restrict Speed Layer to specific page URL patterns",
+      "additionalProperties": false,
+      "required": ["mode", "patterns"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["all", "include", "exclude"],
+          "description": "all = run everywhere; include = run only on patterns; exclude = run everywhere except patterns"
+        },
+        "patterns": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "URL pathname patterns. Supports exact, wildcard (*), and prefix (trailing /) matching"
+        }
+      }
+    },
+    "allowScripts": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Substring/regex patterns — matching scripts execute immediately"
+    },
+    "deferScripts": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Substring/regex patterns — matching scripts are held until idle or user interaction"
+    },
+    "delayedScripts": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Substring/regex patterns — matching scripts are held until delayedTimeout"
+    },
+    "preconnect": {
+      "type": "array",
+      "items": { "type": "string", "format": "uri" },
+      "description": "Origins to preconnect to as soon as the loader runs"
+    },
+    "preload": {
+      "type": "array",
+      "description": "Resource URLs to preload. Items may be a plain URL string or an object with url/as/crossorigin.",
+      "items": {
+        "oneOf": [
+          { "type": "string", "format": "uri" },
+          {
+            "type": "object",
+            "required": ["url"],
+            "additionalProperties": false,
+            "properties": {
+              "url":         { "type": "string", "format": "uri" },
+              "as":          { "type": "string" },
+              "crossorigin": { "type": "string" },
+              "type":        { "type": "string" }
+            }
+          }
+        ]
+      }
+    },
+    "criticalCssInline": {
+      "type": "string",
+      "description": "Critical CSS to inject inline into <head>"
+    },
+    "telemetry": {
+      "type": "object",
+      "description": "Telemetry beacon configuration",
+      "additionalProperties": false,
+      "required": ["endpoint"],
+      "properties": {
+        "endpoint": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to POST telemetry beacons to"
+        },
+        "sampleRate": {
+          "type": "number",
+          "description": "Fraction of page loads that send telemetry (0.0 – 1.0)",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 1
+        }
+      }
+    },
+    "notes": {
+      "type": "object",
+      "description": "Human-readable notes about this manifest configuration"
+    }
+  }
+}

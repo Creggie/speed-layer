@@ -1,0 +1,62 @@
+{
+  "_comment": "DealerOn CMS platform template — pre-filled for typical DealerOn deployments",
+  "allowScripts": [
+    "dealeron.js",
+    "dealeron.static",
+    "do_utility",
+    "cdn.dlron.us",
+    "dlron.us",
+    "jquery",
+    "bootstrap",
+    "modernizr",
+    "coreBundle",
+    "navigation.min.js",
+    "ua-parser",
+    "userAgent-detection",
+    "jquery.validate",
+    "dealerOnLeadsBundle",
+    "locationSortInjection",
+    "formPhoneUtility"
+  ],
+  "deferScripts": [
+    "googletagmanager.com",
+    "gtag",
+    "gtm.js",
+    "analytics.js",
+    "ga.js",
+    "dotagging.js",
+    "taggbaa.dealeron.com",
+    "dealerOnTrack",
+    "facebook.net",
+    "fbevents.js",
+    "doubleclick.net",
+    "adservice",
+    "tracking",
+    "quantcast"
+  ],
+  "delayedScripts": [
+    "prsnbaa.dealeron.com",
+    "personalization.js",
+    "banrsaa.dealeron.com",
+    "banner.js",
+    "priceTrack",
+    "carcodesms.com",
+    "harmoniq",
+    "sincrod.com",
+    "hotjar",
+    "mouseflow",
+    "crazyegg"
+  ],
+  "preconnect": [
+    "https://cdn.dlron.us",
+    "https://taggbaa.dealeron.com",
+    "https://prsnbaa.dealeron.com",
+    "https://banrsaa.dealeron.com",
+    "https://www.googletagmanager.com",
+    "https://fonts.googleapis.com",
+    "https://fonts.gstatic.com"
+  ],
+  "preload": [],
+  "criticalCssInline": "",
+  "disableInterception": true
+}
