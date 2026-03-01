@@ -1,5 +1,5 @@
 /**
- * Speed Layer Loader - DealerOn Edition (v1.1.0)
+ * Speed Layer Loader - DealerOn Edition (v1.2.0)
  *
  * Optimized specifically for DealerOn CMS platform
  * Based on Speed Layer v2.2.0 architecture
@@ -52,7 +52,7 @@
     };
 
     window.__SPEED_LAYER_DO__ = {
-        version: '1.0.0-dealeron',
+        version: '1.2.0-dealeron',
         platform: 'DealerOn CMS',
         state: STATE,
         config: CONFIG,
@@ -119,6 +119,12 @@
 
             return false;
         });
+    }
+
+    function shouldBlockScript(src) {
+        if (!STATE.manifest || !src) return false;
+        const blockList = STATE.manifest.blockScripts || [];
+        return matchesPattern(src, blockList);
     }
 
     function shouldAllowScript(src) {
@@ -501,6 +507,14 @@
                         STATE.processedElements.add(node);
 
                         const src = node.src;
+
+                        if (shouldBlockScript(src)) {
+                            log('Observer: 🚫 Blocking script (permanently removed):', src);
+                            node.src = '';
+                            node.removeAttribute('src');
+                            node.remove();
+                            return;
+                        }
 
                         if (shouldAllowScript(src)) {
                             log('Observer: ✓ Allowing script', src);

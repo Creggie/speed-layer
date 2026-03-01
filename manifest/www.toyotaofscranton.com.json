@@ -5,6 +5,11 @@
   "debug": true,
   "disableInterception": false,
   "idleTimeout": 3000,
+  "blockScripts": [
+    "localhost",
+    "127.0.0.1",
+    "refresh.js"
+  ],
   "allowScripts": [
     "dealerinspire.com",
     "di-assets.com",

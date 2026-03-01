@@ -83,6 +83,11 @@
         }
       }
     },
+    "blockScripts": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Substring/regex patterns — matching scripts are permanently removed from the DOM and never loaded. Use for dev-only tools (e.g. localhost BrowserSync) that must never run on production."
+    },
     "allowScripts": {
       "type": "array",
       "items": { "type": "string" },

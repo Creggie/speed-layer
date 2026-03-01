@@ -1,5 +1,5 @@
 /**
- * Speed Layer Loader v2.2.0 - Enhanced Edition
+ * Speed Layer Loader v2.3.0 - Enhanced Edition
  * Optimized for maximum PageSpeed Insights improvements
  * Additional features: Font optimization, preload management, early hints,
  *   fetchWithTimeout + classifyFetchError + retry (3x exponential backoff),
@@ -39,7 +39,7 @@
     };
 
     window.__SPEED_LAYER__ = {
-        version: '2.2.0',
+        version: '2.3.0',
         state: STATE,
         config: CONFIG,
         forceLoadAll: forceLoadAll,
@@ -104,6 +104,12 @@
 
             return false;
         });
+    }
+
+    function shouldBlockScript(src) {
+        if (!STATE.manifest || !src) return false;
+        const blockList = STATE.manifest.blockScripts || [];
+        return matchesPattern(src, blockList);
     }
 
     function shouldAllowScript(src) {
@@ -350,6 +356,12 @@
                             scriptHandled = true;
                             log('Script src detected:', value);
 
+                            if (shouldBlockScript(value)) {
+                                log('🚫 Blocking script (via Proxy):', value);
+                                // Do not set src — script element will never load
+                                return true;
+                            }
+
                             if (shouldAllowScript(value)) {
                                 log('✓ Allowing script immediately:', value);
                                 Reflect.set(target, property, value);
@@ -434,6 +446,14 @@
                         STATE.processedElements.add(node);
 
                         const src = node.src;
+
+                        if (shouldBlockScript(src)) {
+                            log('Observer: 🚫 Blocking script (permanently removed):', src);
+                            node.src = '';
+                            node.removeAttribute('src');
+                            node.remove();
+                            return;
+                        }
 
                         if (shouldAllowScript(src)) {
                             log('Observer: ✓ Allowing script', src);
@@ -787,7 +807,7 @@
 
     function init() {
         mark('init-start');
-        console.log('[SpeedLayer v2.2.0] Initializing for:', CONFIG.domain);
+        console.log('[SpeedLayer v2.3.0] Initializing for:', CONFIG.domain);
 
         // PHASE 1: Start DOM observer immediately (safe for all sites)
         // Proxy interception is now OPT-IN only (disabled by default for maximum compatibility)
